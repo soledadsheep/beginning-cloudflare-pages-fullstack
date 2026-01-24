@@ -1,0 +1,12 @@
+{
+	"name": "backend",
+	"main": "src/index.ts",
+	"compatibility_date": "2024-01-01",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "adv-db",
+			"database_id": "ca585943-de96-4b71-9d31-5d8fa48a89b0"
+		}
+	]
+}

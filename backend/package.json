@@ -1,0 +1,26 @@
+{
+	"name": "backend",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"test": "vitest",
+        "seedRemoteD1": "wrangler d1 migrations apply DB --remote",
+        "seedLocalD1": "wrangler d1 migrations apply DB --local",
+        "exeLocalD1": "npx wrangler d1 execute adv-db --local --file=./migrations/0001.sql",
+        "exeRemoteD1": "npx wrangler d1 execute adv-db --remote --file=./migrations/0001.sql"
+	},
+	"dependencies": {
+		"chanfana": "^2.6.3",
+		"hono": "^4.6.20",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250129.0",
+		"@types/node": "22.13.0",
+		"typescript": "^5.6.3",
+		"vitest": "^2.1.8",
+		"wrangler": "^4.60.0"
+	}
+}
