@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { API_BASE_URL } from './config'
+import { useState, useEffect } from 'react'
+import { getApiBaseUrl } from './config'
 
 type FormMode = 'login' | 'register' | 'forgot'
 
 function App() {
   const [mode, setMode] = useState<FormMode>('login')
+  const [apiBaseUrl, setApiBaseUrl] = useState<string>('')
   const [formData, setFormData] = useState({
     user_name: '',
     password: '',
@@ -13,10 +14,14 @@ function App() {
     full_name: '',
     birth_date: '',
     email: '',
-    culture_code: 'en'
+    culture_code: 'vi'
   })
   const [forgotEmail, setForgotEmail] = useState('')
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    getApiBaseUrl().then(setApiBaseUrl)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -25,9 +30,10 @@ function App() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage('')
+    if (!apiBaseUrl) return
     try {
       if (mode === 'login') {
-        const response = await fetch(`${API_BASE_URL}/api/user/login`, {
+        const response = await fetch(`${apiBaseUrl}/api/user/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_name: formData.user_name, password: formData.password })
@@ -35,7 +41,7 @@ function App() {
         const result = await response.json()
         setMessage(result.success ? `Welcome, ${result.user?.full_name}!` : result.message)
       } else if (mode === 'register') {
-        const response = await fetch(`${API_BASE_URL}/api/user/register`, {
+        const response = await fetch(`${apiBaseUrl}/api/user/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
@@ -51,8 +57,9 @@ function App() {
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage('')
+    if (!apiBaseUrl) return
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/forgot-password`, {
+      const response = await fetch(`${apiBaseUrl}/api/user/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail })

@@ -8,5 +8,23 @@
 			"database_name": "adv-db",
 			"database_id": "ca585943-de96-4b71-9d31-5d8fa48a89b0"
 		}
-	]
+	],
+	"vars": {
+		"CORS_ORIGINS": "https://your-backend-url.workers.dev"
+	},
+	"observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  }
 }

@@ -2,7 +2,7 @@
 
 Cloudflare Workers backend with Hono, Chanfana for OpenAPI, D1 database, and manual login functionality.
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/your-repo/adv-cloudflare-backend-frontend)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/soledadsheep/beginning-cloudflare-pages-fullstack/tree/main/backend)
 
 ## Setup
 
