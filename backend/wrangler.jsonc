@@ -1,7 +1,8 @@
 {
 	"name": "backend",
-	"main": "src/index.ts",
-	"compatibility_date": "2024-01-01",
+	"main": "src/worker.ts",
+	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_date": "2026-01-14",
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -10,21 +11,22 @@
 		}
 	],
 	"vars": {
-		"CORS_ORIGINS": "https://your-backend-url.workers.dev"
+		"CORS_ORIGINS": "https://your-frontend-url.workers.dev",
+		"JWT_SECRET": "input-any-secret-key"
 	},
 	"observability": {
-    "enabled": false,
-    "head_sampling_rate": 1,
-    "logs": {
-      "enabled": true,
-      "head_sampling_rate": 1,
-      "persist": true,
-      "invocation_logs": true
-    },
-    "traces": {
-      "enabled": false,
-      "persist": true,
-      "head_sampling_rate": 1
-    }
-  }
+		"enabled": false,
+		"head_sampling_rate": 1,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"persist": true,
+			"invocation_logs": true
+		},
+		"traces": {
+			"enabled": false,
+			"persist": true,
+			"head_sampling_rate": 1
+		}
+	}
 }
