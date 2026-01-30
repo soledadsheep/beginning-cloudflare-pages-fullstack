@@ -79,10 +79,21 @@ export class AccountRepository {
 			.run();
 	}
 
-	findResetToken(token: string) {
+	findResetToken(tokenOrUserId: string | number) {
+		const isUserId =
+		typeof tokenOrUserId === 'number' ||
+		(typeof tokenOrUserId === 'string' && /^\d+$/.test(tokenOrUserId));
+
+		if (isUserId) {
+			return getDb(this.env)
+				.prepare(`SELECT * FROM user_password_resets WHERE user_id = ? AND used = 0 ORDER BY created_on DESC LIMIT 1`)
+				.bind(tokenOrUserId)
+				.first<any>();
+		}
+
 		return getDb(this.env)
-			.prepare(`SELECT * FROM user_password_resets WHERE token = ?`)
-			.bind(token)
+			.prepare(`SELECT * FROM user_password_resets WHERE token = ? AND used = 0 LIMIT 1`)
+			.bind(tokenOrUserId)
 			.first<any>();
 	}
 

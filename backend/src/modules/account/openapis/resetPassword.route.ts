@@ -11,6 +11,7 @@ export class UserResetPasswordRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
 		summary: 'Reset password',
+    	security: [{ BearerAuth: [] }],
 		request: {
 			body: {
 				content: {
@@ -31,6 +32,9 @@ export class UserResetPasswordRoute extends OpenAPIRoute {
 						}),
 					},
 				},
+			},
+			401: {
+				description: 'Unauthorized',
 			},
 		},
 	};

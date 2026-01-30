@@ -1,11 +1,11 @@
-
 // backend/src/modules/account/account.service.ts
 import { verifyPassword, hashPassword } from '../../shared/crypto/password'
-import { randomUUID } from 'crypto';
-import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, GetUserInput, ChangePasswordInput } from './account.types';
+import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, GetUserInput, ChangePasswordInput, ChangePasswordTokenInput } from './account.types';
 import { AccountRepository } from './account.repository';
 import { sanitizeInput } from '../../shared/sanitize';
 import { signToken } from '../../middlewares/auth';
+import { randomCode } from '../../shared/utils';
+import { record } from 'zod/v4/mini';
 
 export class AccountService {
 	constructor(private repo: AccountRepository) {}
@@ -71,35 +71,40 @@ export class AccountService {
 		const user = await this.repo.findByUserNameOrEmail(input.email, input.email);
 		if (!user) return { success: true };	// luôn trả success để tránh dò user
 
-		const rawToken = randomUUID();
-		const tokenHash = await hashPassword(rawToken);
+		const record = await this.repo.findResetToken(user.id);
+		if (record && !record.used && new Date(record.expired_at) > new Date()) return { success: true };	// còn token chưa dùng & chưa hết hạn
+		
+		const code = randomCode(48);
+		const tokenHash = await hashPassword(code);
 		const expiredAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();	// 30min
-
 		await this.repo.insertResetToken(user.id, tokenHash, expiredAt);
-
-		// TODO:
-		// - send email
-		// - push queue
-		// - audit log
 
 		return {
 			success: true,
-			token: rawToken, // chỉ để test, production ko trả về
 			tokenHash: tokenHash, // chỉ để test, production ko trả về
+			expiredAt: expiredAt, // chỉ để test, production ko trả về
 		};
 	}
 
-	async resetPassword(input: ResetPasswordInput) {
+	async changePasswordToken(input: ChangePasswordTokenInput) {
 		input = sanitizeInput(input);
 		const record = await this.repo.findResetToken(input.token);
 		if (!record) return { success: false, message: 'Invalid token' };
-		if (record.used) return { success: false, message: 'Token already used' };
 		if (new Date(record.expired_at) < new Date()) return { success: false, message: 'Token expired' };
 
 		const passwordHash = await hashPassword(input.new_password);
 		await this.repo.updatePassword(record.user_id, passwordHash);
 		await this.repo.markResetTokenUsed(record.id);
 
+		return { success: true };
+	}
+
+	async resetPassword(input: ResetPasswordInput) {
+		input = sanitizeInput(input);
+		const user = await this.repo.findByUserNameOrEmail(input.userid_or_email, input.userid_or_email);
+		if (!user) return { success: false, message: 'User not found' };
+		const passwordHash = await hashPassword(input.new_password);
+		await this.repo.updatePassword(user.id, passwordHash);
 		return { success: true };
 	}
 

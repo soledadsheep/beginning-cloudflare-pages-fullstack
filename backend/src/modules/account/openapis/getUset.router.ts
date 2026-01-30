@@ -11,7 +11,7 @@ export class GetUserRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
     	security: [{ BearerAuth: [] }],
-		summary: 'Get user',
+		summary: 'Get list of users',
 		request: {
 			body: {
 				content: {

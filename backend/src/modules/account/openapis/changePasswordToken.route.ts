@@ -5,18 +5,17 @@ import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
 import { AccountRepository } from '../account.repository';
 import { AccountService } from '../account.service';
-import { ChangePasswordSchema } from '../account.types';
+import { ChangePasswordTokenSchema } from '../account.types';
 
-export class UserChangePasswordRoute extends OpenAPIRoute {
+export class UserChangePasswordTokenRoute extends OpenAPIRoute {
     override schema = {
         tags: ['User'],
-    	security: [{ BearerAuth: [] }],
-        summary: 'Change user password',
+        summary: 'Change user password with token',
         request: {
             body: {
                 content: {
                     'application/json': {
-                        schema: ChangePasswordSchema,
+                        schema: ChangePasswordTokenSchema,
                     },
                 },
             },
@@ -33,17 +32,13 @@ export class UserChangePasswordRoute extends OpenAPIRoute {
                     },
                 },
             },
-			401: {
-				description: 'Unauthorized',
-			},
         },
     };
     override async handle(c: AppContext) {
         try {
             const { body } = await this.getValidatedData<typeof this.schema>();
             const service = new AccountService(new AccountRepository(c.env));
-            const jwt = c.get('jwtPayload');
-            return await service.changePassword({ ...body }, jwt);
+            return await service.changePasswordToken({ ...body });
         } catch (e: any) {
             return jsonError(e.errors?.[0]?.message ?? e.message ?? 'Invalid request');
         }

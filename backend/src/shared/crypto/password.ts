@@ -1,7 +1,7 @@
 // backend/src/shared/crypto/password.ts
 const encoder = new TextEncoder();
 const ITERATIONS = 100_000;
-const HASH_ALGO = 'SHA-256';
+const HASH_ALGO = 'sha-256';
 const KEY_LENGTH = 256; // bits
 
 export async function hashPassword(password: string): Promise<string> {
@@ -28,7 +28,7 @@ export async function hashPassword(password: string): Promise<string> {
 
   return [
     'pbkdf2',
-    HASH_ALGO.toLowerCase,
+    HASH_ALGO,
     ITERATIONS,
     bufferToHex(salt),
     bufferToHex(bits),
@@ -40,7 +40,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
   	if (parts.length !== 5) return false;
 
 	const [algo, hashName, iterationsStr, saltHex, hashHex] = parts as [string, string, string, string, string];
-  	if (algo !== 'pbkdf2' || hashName !== HASH_ALGO.toLowerCase()) return false;
+  	if (algo !== 'pbkdf2' || hashName !== HASH_ALGO) return false;
 
   	const iterations = Number(iterationsStr);
   	if (!Number.isFinite(iterations)) return false;

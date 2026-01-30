@@ -58,8 +58,8 @@ export const ForgotPasswordSchema = z
 });
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 
-/* ---------- Reset password ---------- */
-export const ResetPasswordSchema = z
+/* ---------- Change password token ---------- */
+export const ChangePasswordTokenSchema = z
 .object({
 	token: z.string().min(1, 'Token is required'),
     new_password: PasswordSchema,
@@ -74,7 +74,26 @@ export const ResetPasswordSchema = z
 		});
     }
 });
+export type ChangePasswordTokenInput = z.infer<typeof ChangePasswordTokenSchema>;
+
+/* ---------- Reset password ---------- */
+export const ResetPasswordSchema = z
+.object({
+	userid_or_email: z.string().min(1, 'User ID or email is required'),
+    new_password: PasswordSchema,
+    confirm_password: z.string(),
+})
+.superRefine((data, ctx) => {
+    if (data.new_password !== data.confirm_password) {
+		ctx.addIssue({
+			path: ['confirm_password'],
+			message: 'Passwords do not match',
+			code: z.ZodIssueCode.custom,
+		});
+    }
+});
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+
 
 /* ---------- Change password ---------- */
 export const ChangePasswordSchema = z

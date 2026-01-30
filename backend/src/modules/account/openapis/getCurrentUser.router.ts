@@ -10,7 +10,7 @@ export class UserCurrentRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
     	security: [{ BearerAuth: [] }],
-		summary: 'Current user',
+		summary: 'Get current user information',
 		responses: {
 			200: {
 				description: 'Request accepted',
