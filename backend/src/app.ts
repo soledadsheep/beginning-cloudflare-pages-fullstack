@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import type { Env } from './env';
 import { authMiddleware, requirePermission } from './middlewares/auth';
 import { accountOpenApi } from './modules/account/account.openapi';
+import { FileOpenApi } from './modules/attachment/attachment.openapi';
 
 export const app = new Hono<{ Bindings: Env }>();
 
@@ -48,5 +49,6 @@ openapi.registry.registerComponent('securitySchemes', 'BearerAuth', {
   bearerFormat: 'JWT',
 });
 accountOpenApi(openapi, authMiddleware, requirePermission);
+FileOpenApi(openapi, authMiddleware, requirePermission);
 
 export default app;

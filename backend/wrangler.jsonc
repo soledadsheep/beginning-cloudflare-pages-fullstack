@@ -3,6 +3,12 @@
 	"main": "src/worker.ts",
 	"compatibility_flags": ["nodejs_compat"],
 	"compatibility_date": "2026-01-14",
+	"r2_buckets": [
+		{
+			"bucket_name": "r2-uploads",
+			"binding": "R2_UPLOADS"
+		}
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -12,7 +18,9 @@
 	],
 	"vars": {
 		"CORS_ORIGINS": "https://your-frontend-url.workers.dev",
-		"JWT_SECRET": "input-any-secret-key"
+		"JWT_SECRET": "input-any-secret-key",
+		"R2_PUBLIC_URL": "https://cdn.example.com",
+		"FILE_SIGN_SECRET": "input-any-secret-key"
 	},
 	"observability": {
 		"enabled": false,

@@ -6,16 +6,18 @@
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"test": "vitest",
-		"seedRemoteD1": "wrangler d1 migrations apply DB --remote",
 		"seedLocalD1": "wrangler d1 migrations apply DB --local",
+		"seedRemoteD1": "wrangler d1 migrations apply DB --remote",
 		"exeLocalD1": "npx wrangler d1 execute adv-db --local --file=./migrations/0001.sql",
-		"exeRemoteD1": "npx wrangler d1 execute adv-db --remote --file=./migrations/0001.sql"
+		"exeRemoteD1": "npx wrangler d1 execute adv-db --remote --file=./migrations/0001.sql",
+		"r2create": "wrangler r2 bucket create r2-uploads --binding R2_UPLOADS"
 	},
 	"dependencies": {
 		"chanfana": "^2.6.3",
 		"hono": "^4.6.20",
 		"sanitize-html": "^2.17.0",
-		"zod": "^3.24.1"
+		"zod": "^3.25.76",
+		"zod-openapi": "^5.4.6"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20250129.0",
