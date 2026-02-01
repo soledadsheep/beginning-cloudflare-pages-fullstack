@@ -4,8 +4,6 @@ import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, Get
 import { AccountRepository } from './account.repository';
 import { sanitizeInput } from '../../shared/sanitize';
 import { signToken } from '../../middlewares/auth';
-import { randomCode } from '../../shared/utils';
-import { record } from 'zod/v4/mini';
 
 export class AccountService {
 	constructor(private repo: AccountRepository) {}
@@ -20,16 +18,16 @@ export class AccountService {
 			await this.repo.incrementFailCount(input.user_name);
 			return { success: false, message: 'Invalid credentials' };
 		}
-		else {
-			await this.repo.resetFailCount(user.id);
-		}
+		else await this.repo.resetFailCount(user.id);
 
 		const userPermissions = await this.repo.getUserPermissions(user.id);
 		const accessToken = await signToken({
 			sub: user.id,
 			user_name: user.user_name,
-			permissions: userPermissions,
 			email: user.email,
+			culture_code: user.culture_code,
+			permissions: userPermissions,
+			ver: user.token_version,
 		}, secret);
 
 		return {
@@ -46,8 +44,14 @@ export class AccountService {
 				permissions: userPermissions,
 			},
 			access_token: accessToken,
-			token_type: 'Bearer'
+			token_type: 'Bearer',
+			token_version: user.token_version,
 		};
+	}
+
+	async logout(userId: number) {
+		await this.repo.incrementTokenVersion(userId);
+		return { success: true, message: 'Logged out successfully' };
 	}
 
 	async register(input: RegisterInput) {
@@ -74,7 +78,7 @@ export class AccountService {
 		const record = await this.repo.findResetToken(user.id);
 		if (record && !record.used && new Date(record.expired_at) > new Date()) return { success: true };	// còn token chưa dùng & chưa hết hạn
 		
-		const code = randomCode(48);
+		const code = crypto.randomUUID();
 		const tokenHash = await hashPassword(code);
 		const expiredAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();	// 30min
 		await this.repo.insertResetToken(user.id, tokenHash, expiredAt);

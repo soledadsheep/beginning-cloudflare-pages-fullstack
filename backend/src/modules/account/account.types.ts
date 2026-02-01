@@ -135,6 +135,10 @@ export interface UserEntity {
 	created_on: string;
 	updated_on: string;
 	culture_code: string;
+	lock_acc_enable: boolean;
+	lock_acc_end: string | null;
+	login_false_count: number;
+	token_version: number;
 }
 
 export const UserSchema = z
@@ -154,6 +158,7 @@ export const UserSchema = z
 	lock_acc_enable: z.boolean(),
 	lock_acc_end: z.string().nullable(),
 	login_false_count: z.number(),
+	token_version: z.number(),
 });
 export type UserSchemaType = z.infer<typeof UserSchema>;
 

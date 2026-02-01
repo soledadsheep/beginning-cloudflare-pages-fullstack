@@ -1,4 +1,4 @@
-// src/shared/auth.ts
+// backend/src/middlewares/auth.ts
 import { createMiddleware } from 'hono/factory';
 import { sign, verify } from 'hono/jwt';
 import type { Env } from '../env';
@@ -6,9 +6,11 @@ import type { Env } from '../env';
 export type AuthPayload = {
   sub: number;
   user_name: string;
-  permissions?: string[];
   email: string;
+  culture_code: string;
+  permissions?: string[];
   exp: number;
+  ver: number;
 };
 
 export async function signToken(payload: Omit<AuthPayload, 'exp'>, secret?: string | null, expiresInSec = 60 * 60 * 24): Promise<string> {
@@ -25,6 +27,13 @@ export const authMiddleware = createMiddleware<{ Bindings: Env; Variables: { jwt
       const token = auth.slice(7);
       const payload = await verify(token, c.env.JWT_SECRET, 'HS256');
       c.set('jwtPayload', payload as AuthPayload);
+
+      const user = await c.env.DB
+        .prepare('SELECT token_version FROM users WHERE id = ?')
+        .bind(payload.sub)
+        .first<{ token_version: number }>();
+      if (!user || user.token_version !== payload.ver) return c.json({ success: false, message: 'Token revoked' }, 401);
+
       return await next();
   } catch {
       return c.json({ success: false, message: 'Invalid token' }, 401);

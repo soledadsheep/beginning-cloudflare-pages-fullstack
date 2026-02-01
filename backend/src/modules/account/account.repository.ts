@@ -104,6 +104,13 @@ export class AccountRepository {
 			.run();
 	}
 
+	incrementTokenVersion(userId: number) {
+		return getDb(this.env)
+			.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`)
+			.bind(userId)
+			.run();
+	}
+
 	updatePassword(userId: number, passwordHash: string) {
 		return getDb(this.env)
 			.prepare(`UPDATE users SET password_hash = ?, updated_on = datetime('now') WHERE id = ?`)
