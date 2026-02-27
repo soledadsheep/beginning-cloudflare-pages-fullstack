@@ -4,6 +4,7 @@ import { LoginInput, RegisterInput, ForgotPasswordInput, ResetPasswordInput, Get
 import { AccountRepository } from './account.repository';
 import { sanitizeInput } from '../../shared/sanitize';
 import { signToken } from '../../middlewares/auth';
+import { jsonSuccess } from '../../shared/response'
 
 export class AccountService {
 	constructor(private repo: AccountRepository) {}
@@ -30,8 +31,7 @@ export class AccountService {
 			ver: user.token_version,
 		}, secret);
 
-		return {
-			success: true,
+		return jsonSuccess({
 			user: {
 				id: user.id,
 				user_name: user.user_name,
@@ -46,7 +46,7 @@ export class AccountService {
 			access_token: accessToken,
 			token_type: 'Bearer',
 			token_version: user.token_version,
-		};
+		});
 	}
 
 	async logout(userId: number) {
@@ -56,18 +56,16 @@ export class AccountService {
 
 	async register(input: RegisterInput) {
 		input = sanitizeInput(input);
-		// Check existing user
 		const exists = await this.repo.findByUserNameOrEmail(input.user_name, input.email);
 		if (exists) return { success: false, message: 'User already exists' };
 
 		const passwordHash = await hashPassword(input.password);
 		const result = await this.repo.createUser(input, passwordHash);
-		console.log('Register input:', result);
 		if (!result.meta.last_row_id) return { success: false, message: 'Registration failed' };
 
 		const user = await this.repo.findById(result.meta.last_row_id as number);
 		if (!user) return { success: false, message: 'Registration failed' };
-		return { success: true, user };
+		return jsonSuccess({ user });
 	}
 
 	async forgotPassword(input: ForgotPasswordInput) {
@@ -83,11 +81,10 @@ export class AccountService {
 		const expiredAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();	// 30min
 		await this.repo.insertResetToken(user.id, tokenHash, expiredAt);
 
-		return {
-			success: true,
+		return jsonSuccess({
 			tokenHash: tokenHash, // chỉ để test, production ko trả về
 			expiredAt: expiredAt, // chỉ để test, production ko trả về
-		};
+		});
 	}
 
 	async changePasswordToken(input: ChangePasswordTokenInput) {
@@ -100,7 +97,7 @@ export class AccountService {
 		await this.repo.updatePassword(record.user_id, passwordHash);
 		await this.repo.markResetTokenUsed(record.id);
 
-		return { success: true };
+		return { success: true, message: 'Password reset successfully' };
 	}
 
 	async resetPassword(input: ResetPasswordInput) {
@@ -109,7 +106,7 @@ export class AccountService {
 		if (!user) return { success: false, message: 'User not found' };
 		const passwordHash = await hashPassword(input.new_password);
 		await this.repo.updatePassword(user.id, passwordHash);
-		return { success: true };
+		return { success: true, message: 'Password reset successfully' };
 	}
 
 	async changePassword(input: ChangePasswordInput, jwt: any) {
@@ -127,13 +124,13 @@ export class AccountService {
 	async getCurrentUser(jwt: any) {
 		const user = await this.repo.findById(jwt.sub);
 		if (!user) return { success: false, message: 'User not found' };
-		return { success: true, user };
+		return jsonSuccess({ user });
 	}
 
 	async getUser(input: GetUserInput) {
 		input = sanitizeInput(input);
 		const user = await this.repo.getUser(input.userId);
 		if (!user) return { success: false, message: 'User not found' };
-		return { success: true, user };
+		return jsonSuccess({ user });
 	}
 }

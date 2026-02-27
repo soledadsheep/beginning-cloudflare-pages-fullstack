@@ -1,9 +1,11 @@
 // backend/src/modules/account/openapis/logout.route.ts
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import type { AppContext } from '../../../types';
 import { signFile } from '../attachment.config';
-import { jsonSuccess } from '../../../shared/response';
+import { jsonSuccess } from '../../../shared/response'
+import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+extendZodWithOpenApi(z);
 
 export class CreateSignRoute extends OpenAPIRoute {
     override schema = {
@@ -12,12 +14,17 @@ export class CreateSignRoute extends OpenAPIRoute {
         security: [{ BearerAuth: [] }],
         request: {
             body: {
-                required: true,
                 content: {
                     'application/json': {
                         schema: z.object({
-                            path: z.string().min(1).max(1024),
-                            expireInSec: z.number().min(60).max(86400),
+                            path: z.string().min(1).max(1024).openapi({
+                                description: 'Đường dẫn file trong R2',
+                                example: 'private/docs/2024/abc.pdf',
+                            }),
+                            expireInSec: z.number().min(60).max(86400).openapi({
+                                description: 'Thời gian hết hạn (giây). Tối thiểu 60s, tối đa 86400s (24h)',
+                                example: 3600,
+                            }),
                         }),
                     },
                 },
@@ -30,10 +37,12 @@ export class CreateSignRoute extends OpenAPIRoute {
                     'application/json': {
                         schema: z.object({
                             success: z.literal(true),
-                            url: z.string(),
-                            path: z.string(),
-                            exp: z.number(),
-                            sig: z.string(),
+                            data: z.object({
+                                url: z.string(),
+                                path: z.string(),
+                                exp: z.number(),
+                                sig: z.string(),
+                            }),
                         }),
                     },
                 },
@@ -51,7 +60,7 @@ export class CreateSignRoute extends OpenAPIRoute {
         if (!obj) return c.text('Not found', 404);
 
         const url =
-        `${c.env.API_BASE_URL}/api/attachment/download/` +
+        `${c.env.API_BASE_URL}/api/attachment/` +
         `${encodeURIComponent(body.path)}?exp=${exp}&sig=${encodeURIComponent(sig)}`;
 
         return jsonSuccess({ url, path: body.path, exp, sig });

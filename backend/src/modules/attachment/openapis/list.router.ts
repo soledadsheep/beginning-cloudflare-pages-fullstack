@@ -11,15 +11,42 @@ export class ListAttachmentRoute extends OpenAPIRoute {
         security: [{ BearerAuth: [] }],
         request: {
             query: z.object({
-                category: z.string().optional(),
-                page: z.coerce.number().min(1).default(1),
-                pageSize: z.coerce.number().min(1).max(100).default(10),
+                category: z.string().optional().describe('Category để lọc attachment'),
+                page: z.coerce.number().min(1).default(1).describe('Trang số'),
+                pageSize: z.coerce.number().min(1).max(100).default(10).describe('Số lượng mục trên mỗi trang'),
             }),
         },
         responses: {
             200: {
                 description: 'List of attachments',
+                content: {
+                    'application/json': {
+                        schema: z.object({
+                            success: z.literal(true),
+                            data: z.object({
+                                attachments: z.array(
+                                    z.object({
+                                        id: z.string(),
+                                        category: z.string().nullable(),
+                                        original_name: z.string(),
+                                        saved_path: z.string(),
+                                        mime_type: z.string(),
+                                        size: z.number(),
+                                        description: z.string().nullable(),
+                                        created_at: z.string(),
+                                    })
+                                ),
+                            }),
+                        }),
+                    },
+                },
             },
+            401: {
+                description: 'Unauthorized',
+            },
+            400: {
+                description: 'Bad Request',
+            }
         },
     };
     override async handle(c: AppContext) {
@@ -49,8 +76,6 @@ export class ListAttachmentRoute extends OpenAPIRoute {
 
         const { results } = await stmt.all();
 
-        return jsonSuccess({
-            attachments: results,
-        });
+        return jsonSuccess({ attachments: results });
     }
 }

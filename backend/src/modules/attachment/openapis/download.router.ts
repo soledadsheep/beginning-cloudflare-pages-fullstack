@@ -9,12 +9,12 @@ export class DownloadRoute extends OpenAPIRoute {
         tags: ['Attachment'],
         summary: 'Download attachment (signed)',
         request: {
-            params: z.object({
-                path: z.string(),
+            params: z.object({  // dữ liệu nằm trong URL path
+                path: z.string().describe('Đường dẫn file trong R2 (vd: uploads/2024/a.png)'),
             }),
-            query: z.object({
-                sig: z.string(),
-                exp: z.number().min(0),
+            query: z.object({   // dữ liệu sau dấu ? trong URL
+                sig: z.string().describe('Chữ ký HMAC để xác thực URL'),
+                exp: z.number().min(0).describe('Thời gian hết hạn (Unix timestamp seconds)'),
             }),
         },
         responses: {

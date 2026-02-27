@@ -3,14 +3,15 @@ import { z } from 'zod';
 
 export const PasswordSchema = z
   .string({
-    required_error: 'Password is required',
+    required_error: 'Hãy nhập mật khẩu',
   })
-  .min(3, 'Password must be at least 3 characters')
-  .max(64, 'Password must be at most 64 characters')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .min(3, 'Mật khẩu phải có ít nhất 3 ký tự')
+  .max(64, 'Mật khẩu không được quá 64 ký tự')
+  .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất một chữ cái viết hoa')
+  .regex(/[a-z]/, 'Mật khẩu phải chứa ít nhất một chữ cái viết thường')
+  .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất một số')
+  .regex(/[^A-Za-z0-9]/, 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt')
+  .describe('Nhập mật khẩu');
 
 /* ---------- Login ---------- */
 export const LoginSchema = z
@@ -24,14 +25,13 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 export const RegisterSchema = z
 .object({
 	user_name: z.string({
-		required_error: 'Username is required',
-		invalid_type_error: 'Username must be a string',
+		required_error: 'Hãy nhập username'
 	}),
 	first_name: z.string(),
 	last_name: z.string(),
 	full_name: z.string(),
 	birth_date: z.string(), // ISO string
-	email: z.string().email('Invalid email'),
+	email: z.string().email('Email không hợp lệ').min(1, 'Email là bắt buộc'),
 	password: PasswordSchema,
     confirm_password: z.string(),
 	culture_code: z.string(),
@@ -40,7 +40,7 @@ export const RegisterSchema = z
     if (data.password !== data.confirm_password) {
 		ctx.addIssue({
 			path: ['confirm_password'],
-			message: 'Passwords do not match',
+			message: 'Xác nhận mật khẩu không khớp',
 			code: z.ZodIssueCode.custom,
 		});
     }
@@ -54,14 +54,14 @@ export type RegisterInput = z.infer<typeof RegisterSchema>;
 /* ---------- Forgot password ---------- */
 export const ForgotPasswordSchema = z
 .object({
-	email: z.string().email('Invalid email'),
+	email: z.string().email('Email không hợp lệ').min(1, 'Email là bắt buộc'),
 });
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 
 /* ---------- Change password token ---------- */
 export const ChangePasswordTokenSchema = z
 .object({
-	token: z.string().min(1, 'Token is required'),
+	token: z.string().min(1, 'Token là bắt buộc'),
     new_password: PasswordSchema,
     confirm_password: z.string(),
 })
@@ -69,7 +69,7 @@ export const ChangePasswordTokenSchema = z
     if (data.new_password !== data.confirm_password) {
 		ctx.addIssue({
 			path: ['confirm_password'],
-			message: 'Passwords do not match',
+			message: 'Xác nhận mật khẩu không khớp',
 			code: z.ZodIssueCode.custom,
 		});
     }
@@ -79,7 +79,7 @@ export type ChangePasswordTokenInput = z.infer<typeof ChangePasswordTokenSchema>
 /* ---------- Reset password ---------- */
 export const ResetPasswordSchema = z
 .object({
-	userid_or_email: z.string().min(1, 'User ID or email is required'),
+	userid_or_email: z.string().min(1, 'Hãy nhập email hoặc username'),
     new_password: PasswordSchema,
     confirm_password: z.string(),
 })
@@ -87,7 +87,7 @@ export const ResetPasswordSchema = z
     if (data.new_password !== data.confirm_password) {
 		ctx.addIssue({
 			path: ['confirm_password'],
-			message: 'Passwords do not match',
+			message: 'Xác nhận mật khẩu không khớp',
 			code: z.ZodIssueCode.custom,
 		});
     }
@@ -98,15 +98,15 @@ export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 /* ---------- Change password ---------- */
 export const ChangePasswordSchema = z
 .object({
-	old_password: z.string().min(1, 'Current password is required'),
+	old_password: z.string().min(1, 'Hãy nhập mật khẩu hiện tại').describe('Nhập mật khẩu hiện tại'),
     new_password: PasswordSchema,
-    confirm_password: z.string(),
+    confirm_password: z.string().describe('Nhập lại mật khẩu mới'),
 })
 .superRefine((data, ctx) => {
     if (data.new_password !== data.confirm_password) {
 		ctx.addIssue({
 			path: ['confirm_password'],
-			message: 'Passwords do not match',
+			message: 'Xác nhận mật khẩu không khớp',
 			code: z.ZodIssueCode.custom,
 		});
     }

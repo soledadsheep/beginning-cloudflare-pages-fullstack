@@ -11,11 +11,10 @@ export class DeleteRoute extends OpenAPIRoute {
         security: [{ BearerAuth: [] }],
         request: {
             body: {
-                required: true,
                 content: {
                     'application/json': {
                         schema: z.object({
-                            ids: z.array(z.string().uuid()).min(1),
+                            ids: z.array(z.string().uuid()).min(1).describe('Danh sách ID của tệp tin cần xóa'),
                         }),
                     },
                 },

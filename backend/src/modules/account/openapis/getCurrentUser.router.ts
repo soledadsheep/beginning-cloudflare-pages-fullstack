@@ -24,6 +24,14 @@ export class UserCurrentRoute extends OpenAPIRoute {
 			},
 			401: {
 				description: 'Unauthorized',
+                content: {
+                    'application/json': {
+                        schema: z.object({
+                            success: z.boolean().default(false),
+                            message: z.string().default('Unauthorized'),
+                        }),
+                    },
+                },
 			},
 		},
 	};
