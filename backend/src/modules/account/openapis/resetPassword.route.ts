@@ -10,8 +10,7 @@ import { ResetPasswordSchema } from '../account.types';
 export class UserResetPasswordRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
-		summary: 'Reset password',
-    	security: [{ BearerAuth: [] }],
+		summary: 'Reset password for user (admin)',
 		request: {
 			body: {
 				content: {

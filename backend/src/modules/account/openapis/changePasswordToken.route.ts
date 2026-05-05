@@ -1,4 +1,4 @@
-// backend/src/modules/account/openapi/changePassword.route.ts
+// backend/src/modules/account/openapi/changePasswordToken.route.ts
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
@@ -10,7 +10,7 @@ import { ChangePasswordTokenSchema } from '../account.types';
 export class UserChangePasswordTokenRoute extends OpenAPIRoute {
     override schema = {
         tags: ['User'],
-        summary: 'Change user password with token',
+        summary: 'Change user password with token - after forgot password',
         request: {
             body: {
                 content: {

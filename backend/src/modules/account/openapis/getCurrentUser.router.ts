@@ -5,6 +5,7 @@ import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
 import { AccountRepository } from '../account.repository';
 import { AccountService } from '../account.service';
+import { UserSchema } from '../account.types';
 
 export class UserCurrentRoute extends OpenAPIRoute {
 	override schema = {
@@ -18,6 +19,8 @@ export class UserCurrentRoute extends OpenAPIRoute {
 					'application/json': {
 						schema: z.object({
 							success: z.boolean(),
+							message: z.string().optional(),
+							data: UserSchema.omit({ password_hash: true }).optional(),
 						}),
 					},
 				},

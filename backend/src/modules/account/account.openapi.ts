@@ -7,7 +7,7 @@ import { UserChangePasswordTokenRoute } from './openapis/changePasswordToken.rou
 import { UserResetPasswordRoute } from './openapis/resetPassword.route';
 import { UserChangePasswordRoute } from './openapis/changePassword.route';
 import { UserCurrentRoute } from './openapis/getCurrentUser.router';
-import { GetUserRoute } from './openapis/getUset.router';
+import { ListUsersRoute, GetUserByIdRoute, CreateUserRoute, UpdateUserRoute, DeleteUserRoute } from './openapis/userManagement.router';
 
 export function accountOpenApi(openapi: any, authMiddleware: any, requirePermission: any) {
   openapi.post('/api/user/login', UserLoginRoute);
@@ -15,8 +15,15 @@ export function accountOpenApi(openapi: any, authMiddleware: any, requirePermiss
   openapi.post('/api/user/register', UserRegisterRoute);
   openapi.post('/api/user/forgot-password', UserForgotPasswordRoute);
   openapi.post('/api/user/change-password-token', UserChangePasswordTokenRoute);
-  openapi.post('/api/user/reset-password', authMiddleware, UserResetPasswordRoute);
   openapi.post('/api/user/change-password', authMiddleware, UserChangePasswordRoute);
   openapi.post('/api/user/info', authMiddleware, UserCurrentRoute);
-  openapi.post('/api/user/list', authMiddleware, requirePermission('user:list'), GetUserRoute);
+  
+  
+  // User management (REST)
+  openapi.post('/api/user/reset-password', authMiddleware, requirePermission('user:reset-password'), UserResetPasswordRoute);
+  openapi.get('/api/users', authMiddleware, requirePermission('user:list'), ListUsersRoute);
+  openapi.get('/api/users/:id', authMiddleware, requirePermission('user:read'), GetUserByIdRoute);
+  openapi.post('/api/users', authMiddleware, requirePermission('user:create'), CreateUserRoute);
+  openapi.put('/api/users/:id', authMiddleware, requirePermission('user:update'), UpdateUserRoute);
+  openapi.delete('/api/users/:id', authMiddleware, requirePermission('user:delete'), DeleteUserRoute);
 }

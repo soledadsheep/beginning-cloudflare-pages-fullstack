@@ -27,10 +27,10 @@ export class UserRegisterRoute extends OpenAPIRoute {
 					'application/json': {
 						schema: z.object({
 							success: z.boolean(),
+							message: z.string().optional(),
 							user: UserSchema
 								.omit({ password_hash: true })
 								.optional(),
-							message: z.string().optional(),
 						}),
 					},
 				},

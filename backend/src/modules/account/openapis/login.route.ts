@@ -6,11 +6,12 @@ import type { AppContext } from '../../../types';
 import { AccountRepository } from '../account.repository';
 import { AccountService } from '../account.service';
 import { LoginSchema, UserSchema } from '../account.types';
+import { use } from 'hono/jsx';
 
 export class UserLoginRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
-		summary: 'Login user',
+		summary: 'Login with username/email and password',
 		request: {
 			body: {
 				content: {
@@ -22,13 +23,18 @@ export class UserLoginRoute extends OpenAPIRoute {
 		},
 		responses: {
 			200: {
-				description: 'Login result',
+				description: 'Login successful',
 				content: {
 					'application/json': {
 						schema: z.object({
 							success: z.boolean(),
-							user: UserSchema.omit({ password_hash: true }).optional(),
 							message: z.string().optional(),
+							data: z.object({ 
+								user: UserSchema.omit({ password_hash: true, email_confirm: true, lock_acc_enable: true, lock_acc_end: true, login_false_count: true, token_version: true }).optional(),
+								access_token: z.string(),
+								token_type: z.literal('Bearer'),
+								expires_in: z.number(),
+							}).optional(),
 						}),
 					},
 				},
@@ -44,6 +50,7 @@ export class UserLoginRoute extends OpenAPIRoute {
 					},
 				},
 			},
+      		401: { description: 'Invalid credentials' },
 		},
 	};
 	override async handle(c: AppContext) {
