@@ -7,4 +7,6 @@ export interface Env {
 	R2_UPLOADS: R2Bucket;
 	R2_PUBLIC_URL?: string;
 	FILE_SIGN_SECRET: string;
+	FRONTEND_URL?: string;
+	MAIL_FROM?: string;
 }

@@ -103,9 +103,9 @@ export class UploadRoute extends OpenAPIRoute {
 
 			const exp = Date.now() + 1000 * 60 * 60 * 1; // 1 hours
 			const sig = await signFile(path, exp, c.env.FILE_SIGN_SECRET);
-			const downloadUrl = 
-			`${c.env.API_BASE_URL}/api/attachment/`+
-			`${encodeURIComponent(path)}?exp=${exp}&sig=${encodeURIComponent(sig)}`;
+			const downloadUrl =
+				`${c.env.API_BASE_URL}/api/attachment/` +
+				`${encodeURIComponent(path)}?exp=${exp}&sig=${encodeURIComponent(sig)}`;
 			const publicUrl = c.env.R2_PUBLIC_URL ? `${c.env.R2_PUBLIC_URL}/${path}` : null;
 
 			results.push({

@@ -43,8 +43,7 @@ export class DownloadRoute extends OpenAPIRoute {
 
         return new Response(obj.body, {
             headers: {
-                'Content-Type':
-                obj.httpMetadata?.contentType ?? 'application/octet-stream',
+                'Content-Type': obj.httpMetadata?.contentType ?? 'application/octet-stream',
                 'Cache-Control': 'private, max-age=300',
             },
         });

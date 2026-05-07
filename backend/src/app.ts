@@ -48,6 +48,7 @@ openapi.registry.registerComponent('securitySchemes', 'BearerAuth', {
   scheme: 'bearer',
   bearerFormat: 'JWT',
 });
+
 accountOpenApi(openapi, authMiddleware, requirePermission);
 FileOpenApi(openapi, authMiddleware, requirePermission);
 

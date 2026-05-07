@@ -58,10 +58,7 @@ export class CreateSignRoute extends OpenAPIRoute {
         const sig = await signFile(body.path, exp, c.env.FILE_SIGN_SECRET);
         const obj = await c.env.R2_UPLOADS.get(body.path);
         if (!obj) return c.text('Not found', 404);
-
-        const url =
-        `${c.env.API_BASE_URL}/api/attachment/` +
-        `${encodeURIComponent(body.path)}?exp=${exp}&sig=${encodeURIComponent(sig)}`;
+        const url = `${c.env.API_BASE_URL}/api/attachment/` + `${encodeURIComponent(body.path)}?exp=${exp}&sig=${encodeURIComponent(sig)}`;
 
         return jsonSuccess({ url, path: body.path, exp, sig });
     }
