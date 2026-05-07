@@ -4,11 +4,11 @@ import { getDb } from '../../shared/db/d1'
 import type { UserEntity, CreateOrUpdateUserInput, RegisterUserInput, ListUsersInput } from './account.types';
 
 export class AccountRepository {
-	constructor(private env: Env) {}
+	constructor(private env: Env) { }
 
 	async findByUserNameOrEmail(user_name: string, email: string): Promise<UserEntity | null> {
 		return await getDb(this.env)
-			.prepare(`SELECT * FROM users WHERE user_name = ? OR email = ?`)
+			.prepare(`SELECT * FROM users WHERE (user_name = ? OR email = ?) LIMIT 1`)
 			.bind(user_name, email)
 			.first<UserEntity>();
 	}
@@ -20,24 +20,6 @@ export class AccountRepository {
 			.first<UserEntity>();
 	}
 
-	async resetLoginFailCount(userId: number) {
-		return await getDb(this.env)
-			.prepare(`UPDATE users SET login_false_count = 0 WHERE id = ?`)
-			.bind(userId)
-			.run();
-	}
-
-	async incrementLoginFailCount(user_name: string) {
-		return await getDb(this.env)
-			.prepare(
-				`UPDATE users
-				 SET login_false_count = login_false_count + 1
-				 WHERE user_name = ?`
-			)
-			.bind(user_name)
-			.run();
-	}
-
 	async registerUser(data: RegisterUserInput, password_hash: string): Promise<D1Result> {
 		return await getDb(this.env)
 			.prepare(`
@@ -45,7 +27,7 @@ export class AccountRepository {
 				(user_name, first_name, last_name, full_name,
 				birth_date, phone, address1, address2, email, email_confirm,
 				password_hash, created_on, updated_on,
-				country_code, lock_acc_enable, lock_acc_end, login_false_count)
+				country_code, is_locked, lock_until, login_fail_count)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`)
 			.bind(
@@ -63,9 +45,9 @@ export class AccountRepository {
 				new Date().toISOString(),
 				new Date().toISOString(),
 				data.country_code,
-				0, // lock_acc_enable = false
-				null, // lock_acc_end
-				0  // login_false_count
+				0, // is_locked = false
+				null, // lock_until
+				0  // login_fail_count
 			)
 			.run();
 	}
@@ -77,8 +59,8 @@ export class AccountRepository {
 				(user_name, first_name, last_name, full_name,
 				 birth_date, phone, address1, address2, email, email_confirm,
 				 password_hash, created_on, updated_on,
-				 country_code, lock_acc_enable, lock_acc_end,
-				 login_false_count)
+				 country_code, is_locked, lock_until,
+				 login_fail_count)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			)
 			.bind(
@@ -103,7 +85,7 @@ export class AccountRepository {
 			.run();
 	}
 
-	async updateUser(userId: number, input: Partial<CreateOrUpdateUserInput>) {
+	async updateUser(userId: number, input: Partial<CreateOrUpdateUserInput>, updateOn: boolean = false) {
 		const fields = [];
 		const values = [];
 
@@ -140,14 +122,34 @@ export class AccountRepository {
 			values.push(input.country_code);
 		}
 
-		if (input.lock_acc_enable !== undefined) {
-			fields.push('lock_acc_enable = ?');
-			values.push(input.lock_acc_enable ? 1 : 0);
+		if (input.is_locked !== undefined) {
+			fields.push('is_locked = ?');
+			values.push(input.is_locked ? 1 : 0);
 		}
 
-		if (input.lock_false_count !== undefined) {
-			fields.push('login_false_count = ?');
-			values.push(input.lock_false_count);
+		if (input.lock_until !== undefined) {
+			fields.push('lock_until = ?');
+			values.push(input.lock_until);
+		}
+
+		if (input.login_fail_count !== undefined) {
+			fields.push('login_fail_count = ?');
+			values.push(input.login_fail_count);
+		}
+
+		if (input.last_login_time !== undefined) {
+			fields.push('last_login_time = ?');
+			values.push(input.last_login_time);
+		}
+
+		if (input.last_online_time !== undefined) {
+			fields.push('last_online_time = ?');
+			values.push(input.last_online_time);
+		}
+
+		if (input.token_version !== undefined) {
+			fields.push('token_version = ?');
+			values.push(input.token_version);
 		}
 
 		if (fields.length === 0) {
@@ -155,10 +157,17 @@ export class AccountRepository {
 		}
 
 		values.push(userId);
-		const sql = `UPDATE users SET ${fields.join(', ')}, updated_on = datetime('now') WHERE id = ?`;
+		const sql = `UPDATE users SET ${fields.join(', ')} ${updateOn ? ', updated_on = datetime(\'now\')' : ''} WHERE id = ?`;
 		return await getDb(this.env)
 			.prepare(sql)
 			.bind(...values)
+			.run();
+	}
+
+	async incrementTokenVersion(userId: number) {
+		return await getDb(this.env)
+			.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`)
+			.bind(userId)
 			.run();
 	}
 
@@ -167,6 +176,21 @@ export class AccountRepository {
 			.prepare(`UPDATE users SET email_confirm = ?, updated_on = datetime('now') WHERE id = ?`)
 			.bind(email_confirm ? 1 : 0, userId)
 			.run();
+	}
+
+	async findResetToken(tokenOrUserId: string | number) {
+		const isUserId = typeof tokenOrUserId === 'number' || (typeof tokenOrUserId === 'string' && /^\d+$/.test(tokenOrUserId));
+		if (isUserId) {
+			return await getDb(this.env)
+				.prepare(`SELECT * FROM user_password_resets WHERE user_id = ? AND used = 0 AND created_on > CURRENT_TIMESTAMP ORDER BY created_on DESC LIMIT 1`)
+				.bind(tokenOrUserId)
+				.first<any>();
+		}
+
+		return await getDb(this.env)
+			.prepare(`SELECT * FROM user_password_resets WHERE token = ? AND used = 0 AND created_on > CURRENT_TIMESTAMP ORDER BY created_on DESC LIMIT 1`)
+			.bind(tokenOrUserId)
+			.first<any>();
 	}
 
 	async insertResetToken(userId: number, token: string, expiredAt: string) {
@@ -180,60 +204,45 @@ export class AccountRepository {
 			.run();
 	}
 
-	async findResetToken(tokenOrUserId: string | number) {
-		const isUserId = typeof tokenOrUserId === 'number' || (typeof tokenOrUserId === 'string' && /^\d+$/.test(tokenOrUserId));
-		if (isUserId) {
-			return await getDb(this.env)
-				.prepare(`SELECT * FROM user_password_resets WHERE user_id = ? AND used = 0 ORDER BY created_on DESC LIMIT 1`)
-				.bind(tokenOrUserId)
-				.first<any>();
-		}
-
+	async deleteResetToken(id: number) {
 		return await getDb(this.env)
-			.prepare(`SELECT * FROM user_password_resets WHERE token = ? AND used = 0 LIMIT 1`)
-			.bind(tokenOrUserId)
-			.first<any>();
-	}
-
-	async markResetTokenUsed(id: number) {
-		return await getDb(this.env)
-			.prepare(`UPDATE user_password_resets SET used = 1 WHERE id = ?`)
+			.prepare(`DELETE FROM user_password_resets WHERE id = ?`)
 			.bind(id)
 			.run();
 	}
 
-	async incrementTokenVersion(userId: number) {
-		return await getDb(this.env)
-			.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`)
-			.bind(userId)
+	async deleteResetTokensExpired(): Promise<number> {
+		const result = await getDb(this.env)
+			.prepare(`DELETE FROM user_password_resets WHERE expired_at < datetime('now')`)
 			.run();
+		return result.meta.changes; // số lượng dòng bị xóa
 	}
 
 	async updatePasswordWithHistory(userId: number, newPasswordHash: string, oldPasswordHash: string, maxHistory: number = 10): Promise<D1Result> {
 		// Lấy password_his hiện tại
 		const user = await this.getUserById(userId);
 		if (!user) throw new Error('User not found');
-		
+
 		let history: string[] = [];
 		if (user.password_his) {
 			try {
 				history = JSON.parse(user.password_his);
 				if (!Array.isArray(history)) history = [];
-			} catch(e) {
+			} catch (e) {
 				history = [];
 			}
 		}
-		
+
 		// Thêm hash cũ vào đầu mảng
 		history.unshift(oldPasswordHash);
-		
+
 		// Giới hạn số lượng bản ghi lưu trữ
 		if (history.length > maxHistory) {
 			history = history.slice(0, maxHistory);
 		}
-		
+
 		const newHistoryJson = JSON.stringify(history);
-		
+
 		return await getDb(this.env)
 			.prepare(`
 				UPDATE users 
@@ -290,13 +299,13 @@ export class AccountRepository {
 
 	async deleteUser(userId: number) {
 		return await getDb(this.env)
-			.prepare(`DELETE FROM users WHERE id = ?`)
+			.prepare(`UPDATE users SET is_deleted = 1 WHERE id = ?`)
 			.bind(userId)
 			.run();
 	}
 
 
-	// Helper xây dựng conditions và params
+	// Helper build conditions & params
 	private _buildUserFilters(filters: Omit<ListUsersInput, 'page' | 'limit'>): { whereClause: string; params: any[] } {
 		const conditions: string[] = [];
 		const params: any[] = [];

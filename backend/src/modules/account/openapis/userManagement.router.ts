@@ -6,6 +6,7 @@ import type { AppContext } from '../../../types';
 import { AccountRepository } from '../account.repository';
 import { AccountService } from '../account.service';
 import { CreateOrUpdateUserSchema, GetUserByIdSchema, DeleteUserSchema, UserSchema, ListUsersSchema } from '../account.types';
+import { createAccountService } from '../account.factory';
 
 export class ListUsersRoute extends OpenAPIRoute {
 	override schema = {
@@ -24,10 +25,10 @@ export class ListUsersRoute extends OpenAPIRoute {
 							success: z.boolean(),
 							data: z.array(UserSchema.omit({
 								password_hash: true,
-                                token_version: true,
-                                login_false_count: true,
-                                lock_acc_enable: true,
-                                lock_acc_end: true,
+								token_version: true,
+								login_fail_count: true,
+								is_locked: true,
+								lock_until: true,
 								permissions: true,
 							})),
 							pagination: z.object({
@@ -46,7 +47,7 @@ export class ListUsersRoute extends OpenAPIRoute {
 	override async handle(c: AppContext) {
 		try {
 			const { query } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			return await service.listUsers(query);
 		} catch (e: any) {
 			return jsonError(e.message ?? 'Invalid request');
@@ -81,7 +82,7 @@ export class GetUserByIdRoute extends OpenAPIRoute {
 	override async handle(c: AppContext) {
 		try {
 			const { params } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			return await service.getUserById(params.id);
 		} catch (e: any) {
 			return jsonError(e.message ?? 'Invalid request');
@@ -122,7 +123,7 @@ export class CreateUserRoute extends OpenAPIRoute {
 	override async handle(c: AppContext) {
 		try {
 			const { body } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			return await service.createUser(body);
 		} catch (e: any) {
 			return jsonError(e.message ?? 'Invalid request');
@@ -165,7 +166,7 @@ export class UpdateUserRoute extends OpenAPIRoute {
 	override async handle(c: AppContext) {
 		try {
 			const { params, body } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			const jwt = c.get('jwtPayload');
 			return await service.updateUser(params.id, body, jwt);
 		} catch (e: any) {
@@ -202,7 +203,7 @@ export class DeleteUserRoute extends OpenAPIRoute {
 	override async handle(c: AppContext) {
 		try {
 			const { params } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			return await service.deleteUser(params.id);
 		} catch (e: any) {
 			return jsonError(e.message ?? 'Invalid request');

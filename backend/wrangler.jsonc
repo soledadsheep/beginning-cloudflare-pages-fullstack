@@ -18,9 +18,11 @@
 	],
 	"vars": {
 		"CORS_ORIGINS": "https://your-frontend-url.workers.dev",
-		"JWT_SECRET": "input-any-secret-key",
+		"FRONTEND_URL": "https://your-frontend-url.workers.dev",
 		"R2_PUBLIC_URL": "https://cdn.example.com",
-		"FILE_SIGN_SECRET": "input-any-secret-key"
+		"JWT_SECRET": "input-any-string-to-use-as-jwt-secret-key",
+		"FILE_SIGN_SECRET": "input-any-string-to-use-as-file-signature-secret-key",
+		"MAIL_FROM": "noreply@yourdomain.com"
 	},
 	"observability": {
 		"enabled": false,
@@ -37,4 +39,5 @@
 			"head_sampling_rate": 1
 		}
 	}
+	
 }

@@ -37,20 +37,20 @@ export const RegisterBaseSchema = z.object({
   country_code: z.string().optional().refine((val) => !val || ['vi', 'en', 'ja', 'ko'].includes(val), { message: 'Mã quốc gia không hợp lệ' }),
 });
 export const RegisterSchema = RegisterBaseSchema.strict()
-.superRefine((data, ctx) => {
-  if (data.password !== data.confirm_password) {
-    ctx.addIssue({
-      path: ['confirm_password'],
-      message: 'Xác nhận mật khẩu không khớp',
-      code: z.ZodIssueCode.custom,
-    });
-  }
-})
-.transform((data) => ({
-  ...data,
-  full_name: `${data.first_name} ${data.last_name}`.trim(), // tự động tạo full_name
-  country_code: data.country_code ?? 'vi',
-}));
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirm_password) {
+      ctx.addIssue({
+        path: ['confirm_password'],
+        message: 'Xác nhận mật khẩu không khớp',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    full_name: `${data.first_name} ${data.last_name}`.trim(), // tự động tạo full_name
+    country_code: data.country_code ?? 'vi',
+  }));
 export type RegisterUserInput = z.infer<typeof RegisterSchema>;
 
 
@@ -67,35 +67,35 @@ export const ChangePasswordTokenSchema = z.object({
   new_password: PasswordSchema,
   confirm_password: z.string().min(1, 'Xác nhận mật khẩu là bắt buộc'),
 })
-.strict()
-.superRefine((data, ctx) => {
-  if (data.new_password !== data.confirm_password) {
-    ctx.addIssue({
-      path: ['confirm_password'],
-      message: 'Xác nhận mật khẩu không khớp',
-      code: z.ZodIssueCode.custom,
-    });
-  }
-});
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.new_password !== data.confirm_password) {
+      ctx.addIssue({
+        path: ['confirm_password'],
+        message: 'Xác nhận mật khẩu không khớp',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });
 export type ChangePasswordTokenInput = z.infer<typeof ChangePasswordTokenSchema>;
 
 
 /* ---------- Reset password ---------- */
 export const ResetPasswordSchema = z.object({
   userid_or_email: z.string().min(1, 'Hãy nhập email hoặc username'),
-  new_password: PasswordSchema,
-  confirm_password: z.string().min(1, 'Xác nhận mật khẩu là bắt buộc'),
+  new_password: PasswordSchema.optional(),
+  confirm_password: z.string().optional(),
 })
-.strict()
-.superRefine((data, ctx) => {
-  if (data.new_password !== data.confirm_password) {
-    ctx.addIssue({
-      path: ['confirm_password'],
-      message: 'Xác nhận mật khẩu không khớp',
-      code: z.ZodIssueCode.custom,
-    });
-  }
-});
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.new_password !== data.confirm_password) {
+      ctx.addIssue({
+        path: ['confirm_password'],
+        message: 'Xác nhận mật khẩu không khớp',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
 
@@ -105,16 +105,16 @@ export const ChangePasswordSchema = z.object({
   new_password: PasswordSchema,
   confirm_password: z.string().min(1, 'Xác nhận mật khẩu là bắt buộc').describe('Nhập lại mật khẩu mới'),
 })
-.strict()
-.superRefine((data, ctx) => {
-  if (data.new_password !== data.confirm_password) {
-    ctx.addIssue({
-      path: ['confirm_password'],
-      message: 'Xác nhận mật khẩu không khớp',
-      code: z.ZodIssueCode.custom,
-    });
-  }
-});
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.new_password !== data.confirm_password) {
+      ctx.addIssue({
+        path: ['confirm_password'],
+        message: 'Xác nhận mật khẩu không khớp',
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });
 export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
 
 
@@ -136,10 +136,12 @@ export interface UserEntity {
   created_on: string;
   updated_on: string;
   is_deleted: boolean;
+  last_online_time: string | null;
+  last_login_time: string | null;
   country_code: string;
-  lock_acc_enable: boolean;
-  lock_acc_end: string | null;
-  login_false_count: number;
+  is_locked: boolean;
+  lock_until: string | null;
+  login_fail_count: number;
   token_version: number;
 }
 
@@ -161,15 +163,16 @@ export const UserSchema = z.object({
   created_on: z.string(),
   updated_on: z.string(),
   is_deleted: z.boolean(),
+  last_online_time: z.string().nullable(),
+  last_login_time: z.string().nullable(),
   country_code: z.string(),
-  lock_acc_enable: z.boolean(),
-  lock_acc_end: z.string().nullable(),
-  login_false_count: z.number(),
+  is_locked: z.boolean(),
+  lock_until: z.string().nullable(),
+  login_fail_count: z.number(),
   token_version: z.number(),
   permissions: z.array(z.string()).optional(), // Danh sách quyền của user, nếu có thể lấy được
 });
 export type UserSchemaType = z.infer<typeof UserSchema>;
-
 
 
 // ========== LIST USERS (query params) ==========
@@ -207,8 +210,12 @@ export const CreateOrUpdateUserSchema = RegisterBaseSchema.omit({ confirm_passwo
   password: PasswordSchema,
   email_confirm: z.boolean().default(true), // admin có thể xác nhận luôn
   full_name: z.string().optional(), // admin có thể nhập luôn full_name hoặc để hệ thống tự tạo
-  lock_acc_enable: z.boolean().optional(),
-  lock_false_count: z.number().int().nonnegative().optional(),
+  is_locked: z.boolean().optional(),
+  lock_until: z.string().nullable().optional(),
+  login_fail_count: z.number().int().nonnegative().optional(),
+  last_online_time: z.string().nullable(),
+  last_login_time: z.string().nullable(),
+  token_version: z.number().int().nonnegative().optional(),
 });
 export type CreateOrUpdateUserInput = z.infer<typeof CreateOrUpdateUserSchema>;
 

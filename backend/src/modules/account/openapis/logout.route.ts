@@ -3,14 +3,13 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { AccountService } from '../account.service';
-import { AccountRepository } from '../account.repository';
+import { createAccountService } from '../account.factory';
 
 export class UserLogoutRoute extends OpenAPIRoute {
     override schema = {
         tags: ['User'],
         summary: 'Logout user',
-    	security: [{ BearerAuth: [] }],
+        security: [{ BearerAuth: [] }],
         responses: {
             200: {
                 description: 'Logout result',
@@ -40,7 +39,7 @@ export class UserLogoutRoute extends OpenAPIRoute {
         try {
             const jwtPayload = c.get('jwtPayload');
             if (!jwtPayload) return jsonError('Unauthorized', 401);
-            const service = new AccountService(new AccountRepository(c.env));
+            const service = createAccountService(c.env);
             return await service.logout(jwtPayload.sub);
         } catch (e: any) {
             return jsonError(e.message ?? 'Invalid request');

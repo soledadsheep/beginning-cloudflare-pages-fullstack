@@ -3,10 +3,8 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { AccountRepository } from '../account.repository';
-import { AccountService } from '../account.service';
 import { LoginSchema, UserSchema } from '../account.types';
-import { use } from 'hono/jsx';
+import { createAccountService } from '../account.factory';
 
 export class UserLoginRoute extends OpenAPIRoute {
 	override schema = {
@@ -29,8 +27,8 @@ export class UserLoginRoute extends OpenAPIRoute {
 						schema: z.object({
 							success: z.boolean(),
 							message: z.string().optional(),
-							data: z.object({ 
-								user: UserSchema.omit({ password_hash: true, email_confirm: true, lock_acc_enable: true, lock_acc_end: true, login_false_count: true, token_version: true }).optional(),
+							data: z.object({
+								user: UserSchema.omit({ password_hash: true, email_confirm: true, is_locked: true, lock_until: true, login_fail_count: true, token_version: true }).optional(),
 								access_token: z.string(),
 								token_type: z.literal('Bearer'),
 								expires_in: z.number(),
@@ -50,13 +48,13 @@ export class UserLoginRoute extends OpenAPIRoute {
 					},
 				},
 			},
-      		401: { description: 'Invalid credentials' },
+			401: { description: 'Invalid credentials' },
 		},
 	};
 	override async handle(c: AppContext) {
 		try {
 			const { body } = await this.getValidatedData<typeof this.schema>();
-			const service = new AccountService(new AccountRepository(c.env));
+			const service = createAccountService(c.env);
 			return await service.login(body, c.env.JWT_SECRET);
 		} catch (e: any) {
 			return jsonError(e.message ?? 'Invalid request');

@@ -17,8 +17,8 @@ export function accountOpenApi(openapi: any, authMiddleware: any, requirePermiss
   openapi.post('/api/user/change-password-token', UserChangePasswordTokenRoute);
   openapi.post('/api/user/change-password', authMiddleware, UserChangePasswordRoute);
   openapi.post('/api/user/info', authMiddleware, UserCurrentRoute);
-  
-  
+
+
   // User management (REST)
   openapi.post('/api/user/reset-password', authMiddleware, requirePermission('user:reset-password'), UserResetPasswordRoute);
   openapi.get('/api/users', authMiddleware, requirePermission('user:list'), ListUsersRoute);

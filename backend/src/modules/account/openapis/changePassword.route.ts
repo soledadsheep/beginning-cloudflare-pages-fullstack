@@ -3,14 +3,13 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { AccountRepository } from '../account.repository';
-import { AccountService } from '../account.service';
+import { createAccountService } from '../account.factory';
 import { ChangePasswordSchema } from '../account.types';
 
 export class UserChangePasswordRoute extends OpenAPIRoute {
     override schema = {
         tags: ['User'],
-    	security: [{ BearerAuth: [] }],
+        security: [{ BearerAuth: [] }],
         summary: 'Change user password',
         request: {
             body: {
@@ -33,8 +32,8 @@ export class UserChangePasswordRoute extends OpenAPIRoute {
                     },
                 },
             },
-			401: {
-				description: 'Unauthorized',
+            401: {
+                description: 'Unauthorized',
                 content: {
                     'application/json': {
                         schema: z.object({
@@ -43,13 +42,13 @@ export class UserChangePasswordRoute extends OpenAPIRoute {
                         }),
                     },
                 },
-			},
+            },
         },
     };
     override async handle(c: AppContext) {
         try {
             const { body } = await this.getValidatedData<typeof this.schema>();
-            const service = new AccountService(new AccountRepository(c.env));
+            const service = createAccountService(c.env);
             const jwt = c.get('jwtPayload');
             return await service.changePassword({ ...body }, jwt);
         } catch (e: any) {

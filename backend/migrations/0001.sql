@@ -16,11 +16,13 @@ CREATE TABLE users (
 	created_on TEXT NOT NULL,
 	updated_on TEXT NOT NULL,
 	is_deleted BOOLEAN DEFAULT FALSE,
+	last_online_time TEXT,
+	last_login_time TEXT,
 	country_code TEXT DEFAULT 'vi',
-	lock_acc_enable BOOLEAN DEFAULT FALSE,
-	lock_acc_end TEXT,
-	login_false_count INTEGER DEFAULT 0,
-	token_version INTEGER DEFAULT 0
+	is_locked BOOLEAN DEFAULT FALSE,	-- True nếu tài khoản bị khóa
+	lock_until TEXT,					-- Khóa tài khoản đến thời điểm này
+	login_fail_count INTEGER DEFAULT 0,	-- Số lần đăng nhập thất bại liên tiếp, reset về 0 khi đăng nhập thành công
+	token_version INTEGER DEFAULT 0		-- Tăng token_version để vô hiệu hóa tất cả token hiện tại của user (sau khi đổi mật khẩu hoặc nghi ngờ bị lộ token)
 );
 DROP TABLE IF EXISTS user_password_resets;
 CREATE TABLE user_password_resets (
@@ -34,7 +36,7 @@ CREATE TABLE user_password_resets (
 DROP INDEX IF EXISTS idx_user_password_resets_token;
 CREATE UNIQUE INDEX idx_user_password_resets_token ON user_password_resets(token);
 -- Password is '123aA@' hashed with SHA-256
-INSERT INTO users (user_name, first_name, last_name, full_name, birth_date, email, email_confirm, password_hash, password_his, created_on, updated_on, country_code, lock_acc_enable, lock_acc_end, login_false_count, token_version)
+INSERT INTO users (user_name, first_name, last_name, full_name, birth_date, email, email_confirm, password_hash, password_his, created_on, updated_on, country_code, is_locked, lock_until, login_fail_count, token_version)
 VALUES
 	('system', 'System', 'User', 'System User', '2026-01-01', 'system@example.com', TRUE, 'pbkdf2$sha-256$100000$7395fe6a00a8f14d338f0ce215e27ccc$f1ad132cffeaaf0dec5caa4e6ce6b544d9d7b5a3d005b7dada4dc97a477a8340', '[]', datetime('now'), datetime('now'), 'vi', FALSE, NULL, 0, 0),
 	('admin', 'Admin', 'User', 'Admin User', '2026-01-01', 'admin@example.com', TRUE, 'pbkdf2$sha-256$100000$7395fe6a00a8f14d338f0ce215e27ccc$f1ad132cffeaaf0dec5caa4e6ce6b544d9d7b5a3d005b7dada4dc97a477a8340', '[]', datetime('now'), datetime('now'), 'vi', FALSE, NULL, 0, 0);

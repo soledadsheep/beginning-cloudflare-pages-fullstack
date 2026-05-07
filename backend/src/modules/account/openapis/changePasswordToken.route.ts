@@ -3,9 +3,8 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { AccountRepository } from '../account.repository';
-import { AccountService } from '../account.service';
 import { ChangePasswordTokenSchema } from '../account.types';
+import { createAccountService } from '../account.factory';
 
 export class UserChangePasswordTokenRoute extends OpenAPIRoute {
     override schema = {
@@ -37,7 +36,7 @@ export class UserChangePasswordTokenRoute extends OpenAPIRoute {
     override async handle(c: AppContext) {
         try {
             const { body } = await this.getValidatedData<typeof this.schema>();
-            const service = new AccountService(new AccountRepository(c.env));
+            const service = createAccountService(c.env);
             return await service.changePasswordToken({ ...body });
         } catch (e: any) {
             return jsonError(e.errors?.[0]?.message ?? e.message ?? 'Invalid request');
