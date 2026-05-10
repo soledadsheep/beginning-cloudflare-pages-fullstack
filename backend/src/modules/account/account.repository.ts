@@ -1,27 +1,26 @@
 // backend/src/modules/account/account.repository.ts
-import type { Env } from '../../env';
 import { getDb } from '../../shared/db/d1'
 import type { UserEntity, CreateOrUpdateUserInput, RegisterUserInput, ListUsersInput } from './account.types';
 
 export class AccountRepository {
-	constructor(private env: Env) { }
+	constructor() { }
 
 	async findByUserNameOrEmail(user_name: string, email: string): Promise<UserEntity | null> {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`SELECT * FROM users WHERE (user_name = ? OR email = ?) LIMIT 1`)
 			.bind(user_name, email)
 			.first<UserEntity>();
 	}
 
 	async getUserById(userId: number): Promise<UserEntity | null> {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`SELECT * FROM users WHERE id = ?`)
 			.bind(userId)
 			.first<UserEntity>();
 	}
 
 	async registerUser(data: RegisterUserInput, password_hash: string): Promise<D1Result> {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`
 				INSERT INTO users
 				(user_name, first_name, last_name, full_name,
@@ -53,12 +52,12 @@ export class AccountRepository {
 	}
 
 	async createUser(input: CreateOrUpdateUserInput, password_hash: string): Promise<D1Result> {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(
 				`INSERT INTO users
 				(user_name, first_name, last_name, full_name,
 				 birth_date, phone, address1, address2, email, email_confirm,
-				 password_hash, created_on, updated_on,
+				 password_hash, created_on, updated_on, avatar,
 				 country_code, is_locked, lock_until,
 				 login_fail_count)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -77,6 +76,7 @@ export class AccountRepository {
 				password_hash,
 				new Date().toISOString(),
 				new Date().toISOString(),
+				input.avatar,
 				input.country_code ?? 'vi',
 				false,
 				null,
@@ -104,6 +104,10 @@ export class AccountRepository {
 		if (input.birth_date !== undefined) {
 			fields.push('birth_date = ?');
 			values.push(input.birth_date);
+		}
+		if (input.avatar !== undefined) {
+			fields.push('avatar = ?');
+			values.push(input.avatar);
 		}
 		if (input.phone !== undefined) {
 			fields.push('phone = ?');
@@ -158,21 +162,21 @@ export class AccountRepository {
 
 		values.push(userId);
 		const sql = `UPDATE users SET ${fields.join(', ')} ${updateOn ? ', updated_on = datetime(\'now\')' : ''} WHERE id = ?`;
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(sql)
 			.bind(...values)
 			.run();
 	}
 
 	async incrementTokenVersion(userId: number) {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`)
 			.bind(userId)
 			.run();
 	}
 
 	async updateEmailConfirm(userId: number, email_confirm: boolean) {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`UPDATE users SET email_confirm = ?, updated_on = datetime('now') WHERE id = ?`)
 			.bind(email_confirm ? 1 : 0, userId)
 			.run();
@@ -181,20 +185,20 @@ export class AccountRepository {
 	async findResetToken(tokenOrUserId: string | number) {
 		const isUserId = typeof tokenOrUserId === 'number' || (typeof tokenOrUserId === 'string' && /^\d+$/.test(tokenOrUserId));
 		if (isUserId) {
-			return await getDb(this.env)
+			return await getDb()
 				.prepare(`SELECT * FROM user_password_resets WHERE user_id = ? AND used = 0 AND created_on > CURRENT_TIMESTAMP ORDER BY created_on DESC LIMIT 1`)
 				.bind(tokenOrUserId)
 				.first<any>();
 		}
 
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`SELECT * FROM user_password_resets WHERE token = ? AND used = 0 AND created_on > CURRENT_TIMESTAMP ORDER BY created_on DESC LIMIT 1`)
 			.bind(tokenOrUserId)
 			.first<any>();
 	}
 
 	async insertResetToken(userId: number, token: string, expiredAt: string) {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(
 				`INSERT INTO user_password_resets
 				(user_id, token, expired_at, used, created_on)
@@ -205,14 +209,14 @@ export class AccountRepository {
 	}
 
 	async deleteResetToken(id: number) {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`DELETE FROM user_password_resets WHERE id = ?`)
 			.bind(id)
 			.run();
 	}
 
 	async deleteResetTokensExpired(): Promise<number> {
-		const result = await getDb(this.env)
+		const result = await getDb()
 			.prepare(`DELETE FROM user_password_resets WHERE expired_at < datetime('now')`)
 			.run();
 		return result.meta.changes; // số lượng dòng bị xóa
@@ -243,7 +247,7 @@ export class AccountRepository {
 
 		const newHistoryJson = JSON.stringify(history);
 
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`
 				UPDATE users 
 				SET password_hash = ?, 
@@ -257,7 +261,7 @@ export class AccountRepository {
 	}
 
 	async getUserPermissions(userId: number): Promise<string[]> {
-		const rows = await getDb(this.env)
+		const rows = await getDb()
 			.prepare(
 				`SELECT p.name
 				 FROM user_roles ur
@@ -286,19 +290,19 @@ export class AccountRepository {
 			LIMIT ? OFFSET ?
 		`;
 		params.push(limit, offset);
-		const result = await getDb(this.env).prepare(sql).bind(...params).all<UserEntity>();
+		const result = await getDb().prepare(sql).bind(...params).all<UserEntity>();
 		return result.results;
 	}
 
 	async countUsers(filters: Omit<ListUsersInput, 'page' | 'limit'>): Promise<number> {
 		const { whereClause, params } = this._buildUserFilters(filters);
 		const sql = `SELECT COUNT(*) as total FROM users ${whereClause}`;
-		const result = await getDb(this.env).prepare(sql).bind(...params).first<{ total: number }>();
+		const result = await getDb().prepare(sql).bind(...params).first<{ total: number }>();
 		return result?.total ?? 0;
 	}
 
 	async deleteUser(userId: number) {
-		return await getDb(this.env)
+		return await getDb()
 			.prepare(`UPDATE users SET is_deleted = 1 WHERE id = ?`)
 			.bind(userId)
 			.run();

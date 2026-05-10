@@ -3,8 +3,6 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { AccountRepository } from '../account.repository';
-import { AccountService } from '../account.service';
 import { CreateOrUpdateUserSchema, GetUserByIdSchema, DeleteUserSchema, UserSchema, ListUsersSchema } from '../account.types';
 import { createAccountService } from '../account.factory';
 

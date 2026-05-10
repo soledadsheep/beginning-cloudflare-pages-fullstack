@@ -126,6 +126,7 @@ export interface UserEntity {
   last_name: string | null;
   full_name: string | null;
   birth_date: string | null;
+  avatar: string | null;
   phone: string | null;
   address1: string | null;
   address2: string | null;
@@ -153,6 +154,7 @@ export const UserSchema = z.object({
   last_name: z.string().nullable(),
   full_name: z.string().nullable(),
   birth_date: z.string().nullable(),
+  avatar: z.string().nullable(),
   phone: z.string().nullable(),
   address1: z.string().nullable(),
   address2: z.string().nullable(),
@@ -210,6 +212,7 @@ export const CreateOrUpdateUserSchema = RegisterBaseSchema.omit({ confirm_passwo
   password: PasswordSchema,
   email_confirm: z.boolean().default(true), // admin có thể xác nhận luôn
   full_name: z.string().optional(), // admin có thể nhập luôn full_name hoặc để hệ thống tự tạo
+  avatar: z.string().nullable(), // admin có thể nhập luôn avatar hoặc để hệ thống tự tạo
   is_locked: z.boolean().optional(),
   lock_until: z.string().nullable().optional(),
   login_fail_count: z.number().int().nonnegative().optional(),
