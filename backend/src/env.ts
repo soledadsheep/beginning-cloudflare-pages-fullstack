@@ -8,5 +8,6 @@ export interface Env {
 	R2_PUBLIC_URL?: string;
 	FILE_SIGN_SECRET: string;
 	FRONTEND_URL?: string;
+	BACKEND_URL?: string;
 	MAIL_FROM?: string;
 }
