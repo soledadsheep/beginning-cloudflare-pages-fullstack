@@ -4,7 +4,7 @@ import { DownloadRoute } from './openapis/download.router';
 import { ListAttachmentRoute } from './openapis/list.router';
 import { UploadRoute } from './openapis/upload.route';
 
-export function  FileOpenApi(openapi: any, authMiddleware: any, requirePermission: any) {
+export function fileOpenApi(openapi: any, authMiddleware: any, requirePermission: any) {
     openapi.post('/api/attachment/upload', authMiddleware, UploadRoute);
     openapi.post('/api/attachment/createsign', authMiddleware, CreateSignRoute);
     openapi.get('/api/attachment/:path', DownloadRoute);

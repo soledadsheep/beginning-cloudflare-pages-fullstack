@@ -9,6 +9,7 @@ import { createAccountService } from '../account.factory';
 export class UserResetPasswordRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
+		security: [{ BearerAuth: [] }],
 		summary: 'Reset password for user (admin)',
 		request: {
 			body: {
