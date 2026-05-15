@@ -9,7 +9,7 @@ React frontend with Vite and Tailwind CSS.
 1. Install dependencies: `npm install`
 2. Run locally: `npm run dev`
 
-The app will connect to the backend at `http://localhost:8787`.
+The app will connect to the backend at `https://localhost:8787` when using the local HTTPS dev server.
 
 ## Deploy
 

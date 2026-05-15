@@ -40,7 +40,8 @@ function App() {
         })
         const result = await response.json()
         setMessage(result.success ? `Welcome, ${result.user?.full_name}!` : result.message)
-      } else if (mode === 'register') {
+      }
+      else if (mode === 'register') {
         const response = await fetch(`${apiBaseUrl}/api/user/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -49,7 +50,8 @@ function App() {
         const result = await response.json()
         setMessage(result.success ? 'Registration successful!' : result.message)
       }
-    } catch (error) {
+    }
+    catch (error) {
       setMessage('Network error')
     }
   }
