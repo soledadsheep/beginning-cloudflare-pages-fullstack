@@ -61,7 +61,11 @@ export class GetProviderByNameRoute extends OpenAPIRoute {
         tags: ['OAuth'],
 		security: [{ BearerAuth: [] }],
         summary: 'Get OAuth provider by name (admin)',
-        request: { params: z.object({ name: z.string().min(1) }) },
+        request: {
+            params: z.object({
+                name: z.string().min(1)
+            })
+        },
         responses: {
             200: {
                 description: 'OK',
@@ -118,7 +122,13 @@ export class CreateProviderRoute extends OpenAPIRoute {
         security: [{ BearerAuth: [] }],
         summary: 'Create OAuth provider (admin)',
         request: {
-            body: { content: { 'application/json': { schema: CreateOrUpdateProviderSchema } } },
+            body: {
+                content: {
+                    'application/json': {
+                        schema: CreateOrUpdateProviderSchema
+                    }
+                }
+            },
         },
         responses: {
             200: {
@@ -166,7 +176,13 @@ export class UpdateProviderRoute extends OpenAPIRoute {
         summary: 'Update OAuth provider (admin)',
         request: {
             params: z.object({ id: z.coerce.number().int().positive() }),
-            body: { content: { 'application/json': { schema: CreateOrUpdateProviderSchema } } },
+            body: {
+                content: {
+                    'application/json': {
+                        schema: CreateOrUpdateProviderSchema
+                    }
+                }
+            },
         },
         responses: {
             200: {
@@ -212,7 +228,11 @@ export class DeleteProviderRoute extends OpenAPIRoute {
         tags: ['OAuth'],
         security: [{ BearerAuth: [] }],
         summary: 'Delete OAuth provider (admin)',
-        request: { params: z.object({ id: z.coerce.number().int().positive() }) },
+        request: {
+            params: z.object({
+                id: z.coerce.number().int().positive()
+            })
+        },
         responses: {
             200: {
                 description: 'OK',

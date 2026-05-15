@@ -60,7 +60,7 @@ export class AccountRepository {
 				 password_hash, created_on, updated_on, avatar,
 				 country_code, is_locked, lock_until,
 				 login_fail_count)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 			)
 			.bind(
 				input.user_name,
@@ -85,7 +85,7 @@ export class AccountRepository {
 			.run();
 	}
 
-	async updateUser(userId: number, input: Partial<CreateOrUpdateUserInput>, updateOn: boolean = false) {
+	async updateUser(userId: number, input: Partial<CreateOrUpdateUserInput>, isUpdateOnNow: boolean = false) {
 		const fields = [];
 		const values = [];
 
@@ -125,32 +125,26 @@ export class AccountRepository {
 			fields.push('country_code = ?');
 			values.push(input.country_code);
 		}
-
 		if (input.is_locked !== undefined) {
 			fields.push('is_locked = ?');
 			values.push(input.is_locked ? 1 : 0);
 		}
-
 		if (input.lock_until !== undefined) {
 			fields.push('lock_until = ?');
 			values.push(input.lock_until);
 		}
-
 		if (input.login_fail_count !== undefined) {
 			fields.push('login_fail_count = ?');
 			values.push(input.login_fail_count);
 		}
-
 		if (input.last_login_time !== undefined) {
 			fields.push('last_login_time = ?');
 			values.push(input.last_login_time);
 		}
-
 		if (input.last_online_time !== undefined) {
 			fields.push('last_online_time = ?');
 			values.push(input.last_online_time);
 		}
-
 		if (input.token_version !== undefined) {
 			fields.push('token_version = ?');
 			values.push(input.token_version);
@@ -161,7 +155,7 @@ export class AccountRepository {
 		}
 
 		values.push(userId);
-		const sql = `UPDATE users SET ${fields.join(', ')} ${updateOn ? ', updated_on = datetime(\'now\')' : ''} WHERE id = ?`;
+		const sql = `UPDATE users SET ${fields.join(', ')} ${isUpdateOnNow ? ', updated_on = datetime(\'now\')' : ''} WHERE id = ?`;
 		return await getDb()
 			.prepare(sql)
 			.bind(...values)

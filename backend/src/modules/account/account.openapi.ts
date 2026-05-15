@@ -20,10 +20,10 @@ export function accountOpenApi(openapi: any, authMiddleware: any, requirePermiss
 
 
   // User management (REST)
+  openapi.get('/api/user', authMiddleware, requirePermission('user:list'), ListUsersRoute);
+  openapi.get('/api/user/:id', authMiddleware, requirePermission('user:read'), GetUserByIdRoute);
+  openapi.post('/api/user', authMiddleware, requirePermission('user:create'), CreateUserRoute);
+  openapi.put('/api/user/:id', authMiddleware, requirePermission('user:update'), UpdateUserRoute);
+  openapi.delete('/api/user/:id', authMiddleware, requirePermission('user:delete'), DeleteUserRoute);
   openapi.post('/api/user/reset-password', authMiddleware, requirePermission('user:reset-password'), UserResetPasswordRoute);
-  openapi.get('/api/users', authMiddleware, requirePermission('user:list'), ListUsersRoute);
-  openapi.get('/api/users/:id', authMiddleware, requirePermission('user:read'), GetUserByIdRoute);
-  openapi.post('/api/users', authMiddleware, requirePermission('user:create'), CreateUserRoute);
-  openapi.put('/api/users/:id', authMiddleware, requirePermission('user:update'), UpdateUserRoute);
-  openapi.delete('/api/users/:id', authMiddleware, requirePermission('user:delete'), DeleteUserRoute);
 }

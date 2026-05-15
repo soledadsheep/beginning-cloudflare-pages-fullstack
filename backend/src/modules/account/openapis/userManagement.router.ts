@@ -3,14 +3,14 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { CreateOrUpdateUserSchema, GetUserByIdSchema, DeleteUserSchema, UserSchema, ListUsersSchema } from '../account.types';
+import { ListUsersSchema, UserSchema, CreateOrUpdateUserSchema } from '../account.types';
 import { createAccountService } from '../account.factory';
 
 export class ListUsersRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
 		security: [{ BearerAuth: [] }],
-		summary: 'Get pagination list of users with optional search (admin)',
+		summary: 'Get list of users (admin)',
 		request: {
 			query: ListUsersSchema,
 		},
@@ -40,6 +40,7 @@ export class ListUsersRoute extends OpenAPIRoute {
 				},
 			},
 			401: { description: 'Unauthorized' },
+			403: { description: 'Forbidden – requires user:list permission' },
 		},
 	};
 	override async handle(c: AppContext) {
@@ -57,9 +58,11 @@ export class GetUserByIdRoute extends OpenAPIRoute {
 	override schema = {
 		tags: ['User'],
 		security: [{ BearerAuth: [] }],
-		summary: 'Get user by ID - user details (admin)',
+		summary: 'User details (admin)',
 		request: {
-			params: GetUserByIdSchema,
+			params: z.object({
+				id: z.coerce.number().int().positive(),
+			}),
 		},
 		responses: {
 			200: {
@@ -74,6 +77,7 @@ export class GetUserByIdRoute extends OpenAPIRoute {
 				},
 			},
 			401: { description: 'Unauthorized' },
+			403: { description: 'Forbidden – requires user:read permission' },
 			404: { description: 'User not found' },
 		},
 	};
@@ -135,7 +139,9 @@ export class UpdateUserRoute extends OpenAPIRoute {
 		security: [{ BearerAuth: [] }],
 		summary: 'Update user information (admin)',
 		request: {
-			params: GetUserByIdSchema,
+			params: z.object({
+				id: z.coerce.number().int().positive(),
+			}),
 			body: {
 				content: {
 					'application/json': {
@@ -179,7 +185,9 @@ export class DeleteUserRoute extends OpenAPIRoute {
 		security: [{ BearerAuth: [] }],
 		summary: 'Delete user (admin)',
 		request: {
-			params: DeleteUserSchema,
+			params: z.object({
+				id: z.coerce.number().int().positive(),
+			}),
 		},
 		responses: {
 			200: {

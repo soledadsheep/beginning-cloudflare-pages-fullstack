@@ -38,7 +38,8 @@ export class OAuthService {
                 refresh_token: params.get('refresh_token'),
                 expires_in: params.get('expires_in') ? parseInt(params.get('expires_in')!) : undefined,
             };
-        } else {
+        }
+        else {
             data = JSON.parse(text);
         }
         if (!response.ok || !data.access_token) {

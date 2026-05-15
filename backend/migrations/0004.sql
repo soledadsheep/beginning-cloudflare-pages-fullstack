@@ -11,15 +11,16 @@ CREATE TABLE oauth_providers (
     userinfo_endpoint TEXT,             -- URL lấy thông tin user
     scopes TEXT DEFAULT 'email profile', -- cách nhau bằng space
     enabled BOOLEAN DEFAULT 1,
+    description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Thêm một số provider mặc định (tuỳ chọn)
-INSERT INTO oauth_providers (provider_name, client_id, client_secret, enabled, authorization_endpoint, token_endpoint, userinfo_endpoint, scopes) VALUES
-('google', '', '', 0, 'https://accounts.google.com/o/oauth2/v2/auth', 'https://oauth2.googleapis.com/token', 'https://www.googleapis.com/oauth2/v3/userinfo', 'email profile'),
-('github', '', '', 0, 'https://github.com/login/oauth/authorize', 'https://github.com/login/oauth/access_token', 'https://api.github.com/user', 'user:email'),
-('facebook', '', '', 0, 'https://www.facebook.com/v18.0/dialog/oauth', 'https://graph.facebook.com/v18.0/oauth/access_token', 'https://graph.facebook.com/me', 'email public_profile');
+INSERT INTO oauth_providers (provider_name, client_id, client_secret, enabled, authorization_endpoint, token_endpoint, userinfo_endpoint, scopes, description) VALUES
+('google', 'your_google_client_id', 'your_google_client_secret', 0, 'https://accounts.google.com/o/oauth2/v2/auth', 'https://oauth2.googleapis.com/token', 'https://www.googleapis.com/oauth2/v3/userinfo', 'email profile', 'Google OAuth provider: https://console.cloud.google.com/apis/credentials => OAuth 2.0 Client IDs => Web application => Client ID, Client Secret'),
+('facebook', 'your_facebook_client_id', 'your_facebook_client_secret', 0, 'https://www.facebook.com/v18.0/dialog/oauth', 'https://graph.facebook.com/v18.0/oauth/access_token', 'https://graph.facebook.com/me', 'email public_profile', 'Facebook OAuth provider: https://developers.facebook.com/apps/ => Settings => Info => App ID, App Secret'),
+('github', 'your_github_client_id', 'your_github_client_secret', 0, 'https://github.com/login/oauth/authorize', 'https://github.com/login/oauth/access_token', 'https://api.github.com/user', 'user:email', 'GitHub OAuth provider: https://github.com/settings/developers => New OAuth App => Client ID, Client Secret');
 
 
 DROP TABLE IF EXISTS oauth_logins;

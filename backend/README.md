@@ -12,6 +12,7 @@ Cloudflare Workers backend with Hono, Chanfana for OpenAPI, D1 database, and man
 4. Update `wrangler.jsonc` with the database_id from the create command
 5. Initialize database: `wrangler d1 execute adv-db --file ./migrations/0001.sql`
 6. Run locally: `npm run dev`
+7. Run locally with HTTPS: `npm run dev:https`
 
 ## CORS
 

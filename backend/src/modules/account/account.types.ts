@@ -201,12 +201,6 @@ export const ListUsersSchema = z.object({
 });
 export type ListUsersInput = z.infer<typeof ListUsersSchema>;
 
-// ========== GET USER BY ID (path param) ==========
-export const GetUserByIdSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
-export type GetUserByIdInput = z.infer<typeof GetUserByIdSchema>;
-
 // ========== CREATE OR UPDATE USER (admin) ==========
 export const CreateOrUpdateUserSchema = RegisterBaseSchema.omit({ confirm_password: true }).extend({
   password: PasswordSchema,
@@ -221,9 +215,3 @@ export const CreateOrUpdateUserSchema = RegisterBaseSchema.omit({ confirm_passwo
   token_version: z.number().int().nonnegative().optional(),
 });
 export type CreateOrUpdateUserInput = z.infer<typeof CreateOrUpdateUserSchema>;
-
-// ========== DELETE USER ==========
-export const DeleteUserSchema = z.object({
-  id: z.coerce.number().int().positive(),
-});
-export type DeleteUserInput = z.infer<typeof DeleteUserSchema>;
