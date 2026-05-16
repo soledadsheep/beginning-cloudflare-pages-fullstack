@@ -5,6 +5,7 @@ import { OAuthConnection, OAuthProvider } from './oauth.types';
 export class OAuthRepository {
     constructor() { }
 
+    // OAuth Providers
     async getAllProvider(): Promise<OAuthProvider[]> {
         const result = await getDb()
             .prepare(`SELECT * FROM oauth_providers`)
@@ -12,12 +13,57 @@ export class OAuthRepository {
         return result.results;
     }
 
-    async getProviderByName(providerName: string): Promise<OAuthProvider | null> {
-        const result = await getDb()
-            .prepare(`SELECT * FROM oauth_providers WHERE provider_name = ?`)
-            .bind(providerName)
-            .first<OAuthProvider>();
-        return result;
+    async getProvider(provider: Partial<Omit<OAuthProvider, 'id' | 'created_at' | 'updated_at'>>): Promise<OAuthProvider | null> {
+            const conditions: string[] = [];
+            const values: any[] = [];
+
+            if (provider.provider_name !== undefined) {
+                conditions.push('provider_name = ?');
+                values.push(provider.provider_name);
+            }
+            if (provider.client_id !== undefined) {
+                conditions.push('client_id = ?');
+                values.push(provider.client_id);
+            }
+            if (provider.client_secret !== undefined) {
+                conditions.push('client_secret = ?');
+                values.push(provider.client_secret);
+            }
+            if (provider.redirect_uri !== undefined) {
+                conditions.push('redirect_uri = ?');
+                values.push(provider.redirect_uri);
+            }
+            if (provider.authorization_endpoint !== undefined) {
+                conditions.push('authorization_endpoint = ?');
+                values.push(provider.authorization_endpoint);
+            }
+            if (provider.token_endpoint !== undefined) {
+                conditions.push('token_endpoint = ?');
+                values.push(provider.token_endpoint);
+            }
+            if (provider.userinfo_endpoint !== undefined) {
+                conditions.push('userinfo_endpoint = ?');
+                values.push(provider.userinfo_endpoint);
+            }
+            if (provider.scopes !== undefined) {
+                conditions.push('scopes = ?');
+                values.push(provider.scopes);
+            }
+            if (provider.enabled !== undefined) {
+                conditions.push('enabled = ?');
+                values.push(provider.enabled ? 1 : 0);
+            }
+
+            if (conditions.length === 0) {
+                return null;
+            }
+            const sql = `SELECT * FROM oauth_providers WHERE ${conditions.join(' AND ')} LIMIT 1`;
+
+            const result = await getDb()
+                .prepare(sql)
+                .bind(...values)
+                .first<OAuthProvider>();
+            return result;
     }
 
     async createProvider(config: Omit<OAuthProvider, 'id' | 'created_at' | 'updated_at'>): Promise<void> {
@@ -113,6 +159,7 @@ export class OAuthRepository {
             .run();
     }
 
+    // OAuth Connections
     async getAllConnections(): Promise<OAuthConnection[]> {
         const result = await getDb()
             .prepare(`SELECT * FROM oauth_logins`)
@@ -120,11 +167,34 @@ export class OAuthRepository {
         return result.results;
     }
 
-    async findConnectionByProviderAndUserId(providerName: string, providerUserId: string): Promise<OAuthConnection | null> {
-        return await getDb()
-            .prepare(`SELECT * FROM oauth_logins WHERE provider_name = ? AND provider_user_id = ?`)
-            .bind(providerName, providerUserId)
+    async getConnection(connection: Partial<Omit<OAuthConnection, 'id' | 'created_at' | 'updated_at'>>): Promise<OAuthConnection | null> {
+        const conditions: string[] = [];
+        const values: any[] = [];
+
+        if (connection.user_id !== undefined) {
+            conditions.push('user_id = ?');
+            values.push(connection.user_id);
+        }
+        if (connection.provider_name !== undefined) {
+            conditions.push('provider_name = ?');
+            values.push(connection.provider_name);
+        }
+        if (connection.provider_user_id !== undefined) {
+            conditions.push('provider_user_id = ?');
+            values.push(connection.provider_user_id);
+        }
+
+        if (conditions.length === 0) {
+            return null;
+        }
+
+        const sql = `SELECT * FROM oauth_logins WHERE ${conditions.join(' AND ')} LIMIT 1`;
+
+        const result = await getDb()
+            .prepare(sql)
+            .bind(...values)
             .first<OAuthConnection>();
+        return result;
     }
 
     async createConnection(conn: Omit<OAuthConnection, 'id' | 'created_at' | 'updated_at'>): Promise<void> {

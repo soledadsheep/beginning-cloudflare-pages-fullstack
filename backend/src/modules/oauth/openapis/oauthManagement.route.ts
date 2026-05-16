@@ -108,7 +108,7 @@ export class GetProviderByNameRoute extends OpenAPIRoute {
     override async handle(c: AppContext) {
         const { params: { name } } = await this.getValidatedData<typeof this.schema>();
         const repo = new OAuthRepository();
-        const provider = await repo.getProviderByName(name);
+        const provider = await repo.getProvider({ provider_name: name });
         if (!provider) {
             return c.json({ error: 'Provider is not supported' }, 404);
         }

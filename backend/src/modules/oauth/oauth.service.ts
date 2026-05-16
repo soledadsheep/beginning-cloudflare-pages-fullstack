@@ -6,7 +6,11 @@ export class OAuthService {
     constructor(private repo: OAuthRepository) { }
 
     async getProvider(providerName: string): Promise<OAuthProvider | null> {
-        return await this.repo.getProviderByName(providerName);
+        return await this.repo.getProvider({ provider_name: providerName });
+    }
+
+    async getProviderActive(providerName: string): Promise<OAuthProvider | null> {
+        return await this.repo.getProvider({ provider_name: providerName, enabled: true });
     }
 
     async getAllProvider(): Promise<OAuthProvider[]> {

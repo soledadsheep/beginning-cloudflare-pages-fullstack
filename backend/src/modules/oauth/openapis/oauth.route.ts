@@ -27,18 +27,11 @@ export class OAuthAuthorizeRoute extends OpenAPIRoute {
     override async handle(c: AppContext) {
         const { params: { provider } } = await this.getValidatedData<typeof this.schema>();
         const oauthService = new OAuthService(new OAuthRepository());
-        const config = await oauthService.getProvider(provider);
+        const config = await oauthService.getProviderActive(provider);
         if (!config) return jsonError('Provider not found', 404);
 
         const state = crypto.randomUUID();
-        const requestUrl = new URL(c.req.url);
-        let cookieValue = `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; `;
-        if (requestUrl.protocol === 'https:') {
-            cookieValue += 'Secure; SameSite=None';
-        } else {
-            cookieValue += 'SameSite=Lax';
-        }
-        c.header('Set-Cookie', cookieValue);
+        c.header('Set-Cookie', `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; Secure; SameSite=None`);
         const callbackUrl = `${c.env.BACKEND_URL}/api/oauth/${provider}/callback`;
         const authUrl = await oauthService.buildAuthUrl(config, state, callbackUrl);
         return c.redirect(authUrl);
@@ -82,7 +75,7 @@ export class OAuthCallbackRoute extends OpenAPIRoute {
         try {
             const oauthRepo = new OAuthRepository();
             const oauthService = new OAuthService(oauthRepo);
-            const config = await oauthService.getProvider(provider);
+            const config = await oauthService.getProviderActive(provider);
             if (!config) return jsonError('Provider not found', 404);
 
             const callbackUrl = `${c.env.BACKEND_URL}/api/oauth/${provider}/callback`;
@@ -90,7 +83,7 @@ export class OAuthCallbackRoute extends OpenAPIRoute {
             const userInfo = await oauthService.getUserInfo(config, access_token);
 
             const accountRepo = new AccountRepository();
-            let connection = await oauthRepo.findConnectionByProviderAndUserId(provider, userInfo.id);
+            let connection = await oauthRepo.getConnection({ provider_name: provider, provider_user_id: userInfo.id });
             let userId: number;
 
             if (!connection) {
