@@ -19,8 +19,7 @@ export default {
 		const page = url.pathname === '/' ? '/index.html' : url.pathname;
 		const res = await env.STATIC_ASSETS.fetch(new URL(page, request.url));
 		if (res.status === 404) {
-			return new Response('Not Found', { status: 404 });
-			//return env.STATIC_ASSETS.fetch(new URL('/index.html', request.url));
+			return env.STATIC_ASSETS.fetch(new URL('/index.html', request.url));
 		}
 		return res;
 	},
