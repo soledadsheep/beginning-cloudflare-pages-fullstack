@@ -31,7 +31,14 @@ export class OAuthAuthorizeRoute extends OpenAPIRoute {
         if (!config) return jsonError('Provider not found', 404);
 
         const state = crypto.randomUUID();
-        c.header('Set-Cookie', `oauth_state=${state}; HttpOnly; Secure; Path=/; Max-Age=600; SameSite=None`);
+        const requestUrl = new URL(c.req.url);
+        let cookieValue = `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; `;
+        if (requestUrl.protocol === 'https:') {
+            cookieValue += 'Secure; SameSite=None';
+        } else {
+            cookieValue += 'SameSite=Lax';
+        }
+        c.header('Set-Cookie', cookieValue);
         const callbackUrl = `${c.env.BACKEND_URL}/api/oauth/${provider}/callback`;
         const authUrl = await oauthService.buildAuthUrl(config, state, callbackUrl);
         return c.redirect(authUrl);

@@ -275,7 +275,7 @@ export class AccountRepository {
 		const sortDir = filters.sort_order === 'asc' ? 'ASC' : 'DESC';
 
 		const sql = `
-			SELECT id, user_name, first_name, last_name, full_name,
+			SELECT id, user_name, first_name, last_name, full_name, avatar,
 				birth_date, phone, address1, address2, email, email_confirm,
 				country_code, created_on, updated_on, is_deleted
 			FROM users

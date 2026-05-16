@@ -9,17 +9,17 @@ Dự án full-stack đơn giản cho người mới làm quen Cloudflare Workers
 
 ## Cài đặt và Chạy
 
-### Backend (host mặc định - wrangler: http://127.0.0.1:8787/)
+### Backend (host mặc định - wrangler: https://127.0.0.1:8787/)
 1. `cd backend`
 2. `npm install`
 3. `wrangler login`
 4. `wrangler d1 create adv-db`
 5. Cập nhật `wrangler.jsonc` với database_id
 6. `wrangler d1 execute adv-db --file ./migrations/0001.sql`
-7. `npm run dev`
+7. `npm run dev:https`
 
 
-### Frontend (host mặc định - vite: http://localhost:5173/)
+### Frontend (host mặc định - vite: https://127.0.0.1:5173/)
 1. `cd frontend`
 2. `npm install`
 3. `npm run dev`

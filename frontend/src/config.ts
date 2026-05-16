@@ -8,7 +8,7 @@ export const getApiBaseUrl = async (): Promise<string> => {
 			const config = await response.json();
 			apiBaseUrl = config.apiBaseUrl;
 		} catch (error) {
-			apiBaseUrl = 'https://127.0.0.1:8787'; // fallback to HTTPS
+			apiBaseUrl = 'https://127.0.0.1:8787'; // fallback to local HTTPS for dev
 		}
 	}
 	return apiBaseUrl || 'https://127.0.0.1:8787';

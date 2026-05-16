@@ -4,8 +4,7 @@
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"dev:https": "wrangler dev --local-protocol https",
+		"dev": "wrangler dev --local-protocol https",
 		"test": "vitest",
 		"seedLocalD1": "wrangler d1 migrations apply DB --local",
 		"seedRemoteD1": "wrangler d1 migrations apply DB --remote",

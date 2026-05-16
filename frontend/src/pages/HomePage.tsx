@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Row, Col, Card, Button, Typography, Space } from 'antd';
 import { LoginOutlined, UserAddOutlined, DashboardOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
+import { getApiBaseUrl } from '../config';
 
 const { Title, Paragraph } = Typography;
 
 export const HomePage: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
+  const [apiBaseUrl, setApiBaseUrl] = useState('');
+
+  useEffect(() => {
+    getApiBaseUrl().then(setApiBaseUrl);
+  }, []);
 
   return (
     <div>
@@ -67,7 +73,10 @@ export const HomePage: React.FC = () => {
                 hoverable
                 style={{ height: '100%' }}
                 actions={[
-                  <Button icon={<GlobalOutlined />} onClick={() => window.location.href = '/api/oauth/google/authorize'}>
+                  <Button
+                    icon={<GlobalOutlined />}
+                    onClick={() => window.location.href = apiBaseUrl ? `${apiBaseUrl}/api/oauth/google/authorize` : '/api/oauth/google/authorize'}
+                  >
                     Login with Google
                   </Button>
                 ]}

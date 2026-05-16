@@ -16,7 +16,7 @@ Cloudflare Workers backend with Hono, Chanfana for OpenAPI, D1 database, and man
 
 ## CORS
 
-Backend được cấu hình để chỉ cho phép requests từ `http://localhost:5173` (frontend local) và `https://your-frontend-domain.com` (thay bằng domain thực tế khi deploy). Nếu cần thêm domain, cập nhật `origin` trong `index.ts`.
+Backend được cấu hình để chỉ cho phép requests từ `https://127.0.0.1:5173` (frontend local) và `https://your-frontend-domain.com` (thay bằng domain thực tế khi deploy). Nếu cần thêm domain, cập nhật `origin` trong `index.ts`.
 
 ## API
 

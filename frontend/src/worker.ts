@@ -6,7 +6,7 @@ export interface Env {
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url);
-		const apiBaseUrl = env.API_BASE_URL?.trim() || 'https://localhost:8787';
+		const apiBaseUrl = env.API_BASE_URL?.trim() || 'https://127.0.0.1:8787';
 
 		// API endpoint for config
 		if (url.pathname === '/api/config') {

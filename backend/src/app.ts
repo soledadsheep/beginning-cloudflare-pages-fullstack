@@ -20,8 +20,8 @@ app.use(
         .map((o: string) => o.trim().replace(/\/$/, ''))
         .filter(Boolean)
         .concat([
-          'http://localhost:5173',
-          'http://127.0.0.1:5173',
+          'https://127.0.0.1:5173',
+          'https://127.0.0.1:8787',
         ]);
 
       if (!origin) return '*';  // Nếu không có Origin header (server-to-server, curl, Postman...)
@@ -38,6 +38,7 @@ app.use(
 
 // --- OpenAPI adapter (Swagger) ---
 app.use('/openapi.json', authMiddleware, requirePermission('view_docs'));
+app.get('/docs', (c) => c.redirect('/openapi'));
 const openapi_json = '/openapi.json';
 export const openapi = fromHono(app, {
   openapi_url: openapi_json,
