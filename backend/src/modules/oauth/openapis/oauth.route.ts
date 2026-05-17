@@ -7,7 +7,7 @@ import { jsonError } from '../../../shared/response';
 import type { AppContext } from '../../../types';
 import { signToken } from '../../../middlewares/auth';
 import { AccountRepository } from '../../account/account.repository';
-import { CreateOrUpdateUserInput } from '../../account/account.types';
+import { CreateUserInput } from '../../account/account.types';
 import { hashPassword } from '../../../shared/crypto/password';
 
 export class OAuthAuthorizeRoute extends OpenAPIRoute {
@@ -118,7 +118,7 @@ export class OAuthCallbackRoute extends OpenAPIRoute {
                     const [firstName = provider, ...rest] = fullName.split(' ');
                     const lastName = rest.join(' ') || 'User';
 
-                    const newUserData: CreateOrUpdateUserInput = {
+                    const newUserData: CreateUserInput = {
                         user_name: candidateUserName,
                         first_name: firstName,
                         last_name: lastName,
@@ -129,17 +129,12 @@ export class OAuthCallbackRoute extends OpenAPIRoute {
                         email_confirm: true,
                         avatar: userInfo.avatar || null,
                         country_code: 'vi',
-                        phone: null,
-                        address1: null,
-                        address2: null,
-                        last_online_time: null,
-                        last_login_time: null,
                     };
                     const result = await accountRepo.createUser(newUserData, passwordHash);
                     if (!result.success) {
                         return jsonError(`Failed to create user from OAuth data: ${result.meta?.message || 'Database error'}`, 500);
                     }
-                    const newUser = await accountRepo.getUserById(result.meta.last_row_id as number);
+                    const newUser = await accountRepo.getUser({ id: result.meta.last_row_id as number });
                     if (!newUser) {
                         return jsonError('Failed to create user from OAuth data', 500);
                     }
@@ -170,7 +165,7 @@ export class OAuthCallbackRoute extends OpenAPIRoute {
                 );
             }
 
-            const user = await accountRepo.getUserById(userId);
+            const user = await accountRepo.getUser({ id: userId });
             if (!user) return jsonError('User not found', 500);
             const permissions = await accountRepo.getUserPermissions(userId);
             const jwt = await signToken({

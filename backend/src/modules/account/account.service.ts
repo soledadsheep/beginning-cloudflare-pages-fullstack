@@ -4,7 +4,7 @@ import { LoginInput, RegisterUserInput, ForgotPasswordInput, ResetPasswordInput,
 import { AccountRepository } from './account.repository';
 import { sanitizeInput } from '../../shared/sanitize';
 import { signToken } from '../../middlewares/auth';
-import { jsonSuccess } from '../../shared/response'
+import { jsonError, jsonSuccess } from '../../shared/response'
 import { MailService } from '../mail/mail.service';
 import type { Env } from '../../env';
 
@@ -101,7 +101,7 @@ export class AccountService {
 		const passwordHash = await hashPassword(input.password);
 		const result = await this.repo.registerUser(input, passwordHash);
 		if (!result.meta.last_row_id) return { success: false, message: 'Registration failed' };
-		const user = await this.repo.getUserById(result.meta.last_row_id as number);
+		const user = await this.repo.getUser({ id: result.meta.last_row_id as number });
 		if (!user) return { success: false, message: 'Registration failed' };
 
 		// Gửi email xác nhận đăng ký
@@ -149,7 +149,7 @@ export class AccountService {
 		if (!record || new Date(record.expired_at) < new Date()) return jsonSuccess({ success: false, message: 'Invalid or expired token' });
 		const passwordHash = await hashPassword(input.new_password);
 		// Lấy user để có password_hash cũ
-		const user = await this.repo.getUserById(record.user_id);
+		const user = await this.repo.getUser({ id: record.user_id });
 		if (!user) return jsonSuccess({ success: false, message: 'User not found' });
 		// Cập nhật mật khẩu và lưu lịch sử mật khẩu
 		await this.repo.updatePasswordWithHistory(record.user_id, passwordHash, user.password_hash);
@@ -160,7 +160,7 @@ export class AccountService {
 	async changePassword(input: ChangePasswordInput, jwt: any) {
 		input = sanitizeInput(input);
 		const userId = jwt.sub;
-		const user = await this.repo.getUserById(userId);
+		const user = await this.repo.getUser({ id: userId });
 		if (!user) return jsonSuccess({ success: false, message: 'User not found' });
 		const ok = await verifyPassword(input.old_password, user.password_hash);
 		if (!ok) return jsonSuccess({ success: false, message: 'Old password is incorrect' });
@@ -171,8 +171,8 @@ export class AccountService {
 	}
 
 	async getCurrentUser(jwt: any) {
-		const user = await this.repo.getUserById(jwt.sub);
-		if (!user) return jsonSuccess({ success: false, message: 'User not found' });
+		const user = await this.repo.getUser({ id: jwt.sub });
+		if (!user) return jsonError('User not found');
 		return jsonSuccess({ user });
 	}
 
@@ -183,8 +183,8 @@ export class AccountService {
 	}
 
 	async updateEmailConfirm(userId: number, email_confirm: boolean) {
-		await this.repo.updateEmailConfirm(userId, email_confirm);
-		return jsonSuccess({ success: true, message: 'Email confirmation status updated successfully' });
+		await this.repo.updateUser(userId, { email_confirm });
+		return jsonSuccess(null, 'Email confirmation status updated successfully');
 	}
 
 	// Admin management
@@ -192,7 +192,7 @@ export class AccountService {
 	async resetPassword(input: ResetPasswordInput) {
 		input = sanitizeInput(input);
 		const user = await this.repo.findByUserNameOrEmail(input.userid_or_email, input.userid_or_email);
-		if (!user) return jsonSuccess({ success: false, message: 'User not found' });
+		if (!user) return jsonError('User not found');
 
 		let newPassword: string;
 		if (input.new_password) newPassword = input.new_password;
@@ -206,7 +206,7 @@ export class AccountService {
 			text: `Hello ${user.user_name},\n\nYour new password is: ${newPassword}\n\nPlease change it after logging in.\n\nBest regards,`,
 			html: `<p>Hello ${user.user_name},</p><p>Your new password is: <strong>${newPassword}</strong></p><p>Please change it after logging in.</p><p>Best regards,</p>`,
 		});
-		return jsonSuccess({ success: true, message: `Password has been reset for user ${user.user_name}.` });
+		return jsonSuccess(null, `Password has been reset for user ${user.user_name}.`);
 	}
 
 	async listUsers(query: ListUsersInput) {
@@ -226,45 +226,45 @@ export class AccountService {
 	}
 
 	async getUserById(userId: number) {
-		const user = await this.repo.getUserById(userId);
-		if (!user) return jsonSuccess({ success: false, message: 'User not found' });
+		const user = await this.repo.getUser({ id: userId, is_deleted: false });
+		if (!user) return jsonError('User not found');
 		const { password_hash, ...safeUser } = user;
 		return jsonSuccess({ user: safeUser });
 	}
 
-	async createUser(input: CreateOrUpdateUserInput) {
+	async createUser(input: Omit<CreateOrUpdateUserInput, 'email_confirm' | 'is_deleted' | 'created_on' | 'updated_on' | 'token_version' | 'last_online_time' | 'last_login_time' | 'is_locked' | 'lock_until' | 'login_fail_count'>) {
 		// Kiểm tra username/email đã tồn tại
 		const existing = await this.repo.findByUserNameOrEmail(input.user_name, input.email);
-		if (existing) return jsonSuccess({ success: false, message: 'Username or email already exists' });
+		if (existing) return jsonError('Username or email already exists');
 
 		const passwordHash = await hashPassword(input.password);
 		const result = await this.repo.createUser(input, passwordHash);
-		if (!result.success) return jsonSuccess({ success: false, message: 'Failed to create user' });
+		if (!result.success) return jsonError(`Failed to create user: ${result.meta?.message || 'Database error'}`, 500);
 
-		// Lấy user vừa tạo (cần thêm method findLastCreated hoặc dùng lastInsertRowid)
-		const newUser = await this.repo.getUserById(result.meta.last_row_id);
+		// Lấy user vừa tạo
+		const newUser = await this.repo.getUser({ id: result.meta.last_row_id });
 		const { password_hash: _, ...safeUser } = newUser!;
 		return jsonSuccess({ user: safeUser });
 	}
 
-	async updateUser(userId: number, input: CreateOrUpdateUserInput, jwt: any) {
+	async updateUser(userId: number, input: Omit<CreateOrUpdateUserInput, 'user_name' | 'password' | 'email' | 'email_confirm' | 'is_deleted' | 'created_on' | 'updated_on' | 'token_version' | 'last_online_time' | 'last_login_time' | 'is_locked' | 'lock_until' | 'login_fail_count'>, jwt: any) {
 		// Kiểm tra quyền: chỉ admin hoặc chính user đó
-		const currentUser = await this.repo.getUserById(userId);
-		if (!currentUser) return jsonSuccess({ success: false, message: 'User not found' });
+		const currentUser = await this.repo.getUser({ id: userId, is_deleted: false });
+		if (!currentUser) return jsonError('User not found');
 
 		const isAdmin = jwt.permissions?.includes('user:update') || false;
 		const isOwner = jwt.sub === userId;
 		if (!isAdmin && !isOwner) {
-			return jsonSuccess({ success: false, message: 'Forbidden' });
+			return jsonError('Forbidden: You do not have permission to update this user', 403);
 		}
 
 		await this.repo.updateUser(userId, input);
-		return jsonSuccess({ success: true, message: 'User updated successfully' });
+		return jsonSuccess(null, 'User updated successfully');
 	}
 
 	async deleteUser(userId: number) {
-		await this.repo.updateEmailConfirm(userId, false);
-		return jsonSuccess({ success: true, message: 'User deleted successfully' });
+		await this.repo.updateUser(userId, { is_deleted: true }, true);
+		return jsonSuccess(null, 'User deleted successfully');
 	}
 
 }

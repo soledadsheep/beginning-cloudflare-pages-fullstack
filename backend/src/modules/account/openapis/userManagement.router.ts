@@ -3,7 +3,7 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { jsonError } from '../../../shared/response'
 import type { AppContext } from '../../../types';
-import { ListUsersSchema, UserSchema, CreateOrUpdateUserSchema } from '../account.types';
+import { ListUsersSchema, UserSchema, CreateUserSchema, UpdateUserSchema } from '../account.types';
 import { createAccountService } from '../account.factory';
 
 export class ListUsersRoute extends OpenAPIRoute {
@@ -97,11 +97,12 @@ export class CreateUserRoute extends OpenAPIRoute {
 		tags: ['User'],
 		security: [{ BearerAuth: [] }],
 		summary: 'Create a new user (admin)',
+		description: 'Admin create a new user.',
 		request: {
 			body: {
 				content: {
 					'application/json': {
-						schema: CreateOrUpdateUserSchema,
+						schema: CreateUserSchema,
 					},
 				},
 			},
@@ -145,7 +146,7 @@ export class UpdateUserRoute extends OpenAPIRoute {
 			body: {
 				content: {
 					'application/json': {
-						schema: CreateOrUpdateUserSchema,
+						schema: UpdateUserSchema,
 					},
 				},
 			},

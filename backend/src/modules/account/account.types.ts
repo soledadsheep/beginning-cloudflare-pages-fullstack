@@ -23,20 +23,21 @@ export type LoginInput = z.infer<typeof LoginSchema>;
 
 
 /* ---------- Register ---------- */
-export const RegisterBaseSchema = z.object({
-  user_name: z.string({ required_error: 'Hãy nhập username' }).min(3, 'Username tối thiểu 3 ký tự').max(30, 'Username tối đa 30 ký tự').regex(/^[a-zA-Z0-9_]+$/, 'Username chỉ được chứa chữ cái, số và dấu gạch dưới'),
-  first_name: z.string().min(1, 'Tên là bắt buộc'),
-  last_name: z.string().min(1, 'Họ là bắt buộc'),
-  birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày sinh phải đúng định dạng YYYY-MM-DD').refine((date) => !isNaN(Date.parse(date)) || new Date(date) < new Date(), 'Ngày sinh không hợp lệ'),
-  email: z.string().email('Email không hợp lệ').min(1, 'Email là bắt buộc'),
-  phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Số điện thoại không hợp lệ').optional().nullable(),
-  address1: z.string().max(255, 'Địa chỉ không được quá 255 ký tự').optional().nullable(),
-  address2: z.string().max(255, 'Địa chỉ không được quá 255 ký tự').optional().nullable(),
-  password: PasswordSchema,
-  confirm_password: z.string().min(1, 'Xác nhận mật khẩu là bắt buộc'),
-  country_code: z.string().optional().refine((val) => !val || ['vi', 'en', 'ja', 'ko'].includes(val), { message: 'Mã quốc gia không hợp lệ' }),
-});
-export const RegisterSchema = RegisterBaseSchema.strict()
+export const RegisterSchema = z
+  .object({
+    user_name: z.string({ required_error: 'Hãy nhập username' }).min(3, 'Username tối thiểu 3 ký tự').max(30, 'Username tối đa 30 ký tự').regex(/^[a-zA-Z0-9_]+$/, 'Username chỉ được chứa chữ cái, số và dấu gạch dưới'),
+    first_name: z.string().min(1, 'Tên là bắt buộc'),
+    last_name: z.string().min(1, 'Họ là bắt buộc'),
+    birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày sinh phải đúng định dạng YYYY-MM-DD').optional().nullable(),
+    email: z.string().email('Email không hợp lệ'),
+    phone: z.string().regex(/^\+?[0-9]{7,15}$/, 'Số điện thoại không hợp lệ').optional().nullable(),
+    address1: z.string().max(255, 'Địa chỉ không được vượt quá 255 ký tự').optional().nullable(),
+    address2: z.string().max(255, 'Địa chỉ không được vượt quá 255 ký tự').optional().nullable(),
+    password: PasswordSchema,
+    confirm_password: z.string(),
+    country_code: z.string().optional().refine((val) => !val || ['vi', 'en', 'ja', 'ko'].includes(val), { message: 'Mã quốc gia không hợp lệ' }),
+  })
+  .strict()
   .superRefine((data, ctx) => {
     if (data.password !== data.confirm_password) {
       ctx.addIssue({
@@ -44,6 +45,31 @@ export const RegisterSchema = RegisterBaseSchema.strict()
         message: 'Xác nhận mật khẩu không khớp',
         code: z.ZodIssueCode.custom,
       });
+    }
+    if (data.birth_date) {
+      const parsed = Date.parse(data.birth_date);
+      if (isNaN(parsed)) {
+        ctx.addIssue({
+          path: ['birth_date'],
+          message: 'Ngày sinh không đúng định dạng YYYY-MM-DD',
+          code: z.ZodIssueCode.custom,
+        });
+      }
+      else {
+        const birthDate = new Date(data.birth_date);
+        const now = new Date();
+        // Ngày 100 năm trước
+        const minDate = new Date(now);
+        minDate.setFullYear(now.getFullYear() - 100);
+
+        if (birthDate > now || birthDate < minDate) {
+          ctx.addIssue({
+            path: ['birth_date'],
+            message: `Ngày sinh không hợp lệ`,
+            code: z.ZodIssueCode.custom,
+          });
+        }
+      }
     }
   })
   .transform((data) => ({
@@ -202,16 +228,118 @@ export const ListUsersSchema = z.object({
 export type ListUsersInput = z.infer<typeof ListUsersSchema>;
 
 // ========== CREATE OR UPDATE USER (admin) ==========
-export const CreateOrUpdateUserSchema = RegisterBaseSchema.omit({ confirm_password: true }).extend({
-  password: PasswordSchema,
-  email_confirm: z.boolean().default(true), // admin có thể xác nhận luôn
-  full_name: z.string().optional(), // admin có thể nhập luôn full_name hoặc để hệ thống tự tạo
-  avatar: z.string().nullable(), // admin có thể nhập luôn avatar hoặc để hệ thống tự tạo
-  is_locked: z.boolean().optional(),
-  lock_until: z.string().nullable().optional(),
-  login_fail_count: z.number().int().nonnegative().optional(),
-  last_online_time: z.string().nullable(),
-  last_login_time: z.string().nullable(),
-  token_version: z.number().int().nonnegative().optional(),
-});
-export type CreateOrUpdateUserInput = z.infer<typeof CreateOrUpdateUserSchema>;
+export const CreateUserSchema = z
+  .object({
+    user_name: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username chỉ được chứa chữ cái, số và dấu gạch dưới'),
+    first_name: z.string().min(1),
+    last_name: z.string().min(1),
+    full_name: z.string().optional(),
+    birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    email: z.string().email(),
+    email_confirm: z.boolean().optional(),
+    phone: z.string().regex(/^\+?[0-9]{7,15}$/).nullable().optional(),
+    address1: z.string().max(255).nullable().optional(),
+    address2: z.string().max(255).nullable().optional(),
+    avatar: z.string().nullable().optional(),
+    country_code: z.string().optional().refine(val => !val || ['vi', 'en', 'ja', 'ko'].includes(val)),
+    password: PasswordSchema,
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.birth_date) {
+      const parsed = Date.parse(data.birth_date);
+      if (isNaN(parsed)) {
+        ctx.addIssue({
+          path: ['birth_date'],
+          message: 'Ngày sinh không đúng định dạng YYYY-MM-DD',
+          code: z.ZodIssueCode.custom,
+        });
+      }
+      else {
+        const birthDate = new Date(data.birth_date);
+        const now = new Date();
+        // Ngày 100 năm trước
+        const minDate = new Date(now);
+        minDate.setFullYear(now.getFullYear() - 100);
+
+        if (birthDate > now || birthDate < minDate) {
+          ctx.addIssue({
+            path: ['birth_date'],
+            message: `Ngày sinh không hợp lệ`,
+            code: z.ZodIssueCode.custom,
+          });
+        }
+      }
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    full_name: `${data.first_name} ${data.last_name}`.trim(), // tự động tạo full_name
+    country_code: data.country_code ?? 'vi',
+  }));
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+
+export const UpdateUserSchema = z
+  .object({
+    user_name: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, 'Username chỉ được chứa chữ cái, số và dấu gạch dưới'),
+    first_name: z.string().min(1),
+    last_name: z.string().min(1),
+    full_name: z.string().optional(),
+    birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    email: z.string().email(),
+    email_confirm: z.boolean().optional(),
+    phone: z.string().regex(/^\+?[0-9]{7,15}$/).nullable().optional(),
+    address1: z.string().max(255).nullable().optional(),
+    address2: z.string().max(255).nullable().optional(),
+    avatar: z.string().nullable().optional(),
+    country_code: z.string().optional().refine(val => !val || ['vi', 'en'].includes(val)),
+    is_locked: z.boolean().optional(),
+    lock_until: z.string().nullable().optional(),
+    login_fail_count: z.number().int().nonnegative().optional(),
+    last_online_time: z.string().nullable().optional(),
+    last_login_time: z.string().nullable().optional(),
+    token_version: z.number().int().nonnegative().optional(),
+    is_deleted: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.birth_date) {
+      const parsed = Date.parse(data.birth_date);
+      if (isNaN(parsed)) {
+        ctx.addIssue({
+          path: ['birth_date'],
+          message: 'Ngày sinh không đúng định dạng YYYY-MM-DD',
+          code: z.ZodIssueCode.custom,
+        });
+      }
+      else {
+        const birthDate = new Date(data.birth_date);
+        const now = new Date();
+        // Ngày 100 năm trước
+        const minDate = new Date(now);
+        minDate.setFullYear(now.getFullYear() - 100);
+
+        if (birthDate > now || birthDate < minDate) {
+          ctx.addIssue({
+            path: ['birth_date'],
+            message: `Ngày sinh không hợp lệ`,
+            code: z.ZodIssueCode.custom,
+          });
+        }
+      }
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    full_name: `${data.first_name} ${data.last_name}`.trim(), // tự động tạo full_name
+    country_code: data.country_code ?? 'vi',
+  }));
+export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+
+export type GetUserInput = {
+  id?: number;
+  user_name?: string;
+  email?: string;
+  phone?: string;
+  is_deleted?: boolean;
+};

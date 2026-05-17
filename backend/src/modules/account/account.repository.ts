@@ -1,21 +1,51 @@
 // backend/src/modules/account/account.repository.ts
 import { getDb } from '../../shared/db/d1'
-import type { UserEntity, CreateOrUpdateUserInput, RegisterUserInput, ListUsersInput } from './account.types';
+import type { UserEntity, CreateUserInput, UpdateUserInput, RegisterUserInput, ListUsersInput, GetUserInput } from './account.types';
 
 export class AccountRepository {
 	constructor() { }
+
+	async getUser(user: GetUserInput): Promise<UserEntity | null> {
+		const conditions: string[] = [];
+        const values: any[] = [];
+
+		if (user.id !== undefined) {
+			conditions.push('id = ?');
+			values.push(user.id);
+		}
+		if (user.user_name !== undefined) {
+			conditions.push('user_name = ?');
+			values.push(user.user_name);
+		}
+		if (user.phone !== undefined) {
+			conditions.push('phone = ?');
+			values.push(user.phone);
+		}
+		if (user.email !== undefined) {
+			conditions.push('email = ?');
+			values.push(user.email);
+		}
+		if (user.is_deleted !== undefined) {
+			conditions.push('is_deleted = ?');
+			values.push(user.is_deleted ? 1 : 0);
+		}
+
+		if (conditions.length === 0) {
+			return null;
+		}
+
+		const sql = `SELECT * FROM users WHERE ${conditions.join(' AND ')} LIMIT 1`;
+
+		return await getDb()
+			.prepare(sql)
+			.bind(...values)
+			.first<UserEntity>();
+	}
 
 	async findByUserNameOrEmail(user_name: string, email: string): Promise<UserEntity | null> {
 		return await getDb()
 			.prepare(`SELECT * FROM users WHERE (user_name = ? OR email = ?) LIMIT 1`)
 			.bind(user_name, email)
-			.first<UserEntity>();
-	}
-
-	async getUserById(userId: number): Promise<UserEntity | null> {
-		return await getDb()
-			.prepare(`SELECT * FROM users WHERE id = ?`)
-			.bind(userId)
 			.first<UserEntity>();
 	}
 
@@ -51,7 +81,7 @@ export class AccountRepository {
 			.run();
 	}
 
-	async createUser(input: CreateOrUpdateUserInput, password_hash: string): Promise<D1Result> {
+	async createUser(input: Partial<CreateUserInput>, password_hash: string): Promise<D1Result> {
 		return await getDb()
 			.prepare(
 				`INSERT INTO users
@@ -85,7 +115,7 @@ export class AccountRepository {
 			.run();
 	}
 
-	async updateUser(userId: number, input: Partial<CreateOrUpdateUserInput>, isUpdateOnNow: boolean = false) {
+	async updateUser(userId: number, input: Partial<UpdateUserInput>, isUpdateOnNow: boolean = false) {
 		const fields = [];
 		const values = [];
 
@@ -108,6 +138,14 @@ export class AccountRepository {
 		if (input.avatar !== undefined) {
 			fields.push('avatar = ?');
 			values.push(input.avatar);
+		}
+		if (input.email !== undefined) {
+			fields.push('email = ?');
+			values.push(input.email);
+		}
+		if (input.email_confirm !== undefined) {
+			fields.push('email_confirm = ?');
+			values.push(input.email_confirm ? 1 : 0);
 		}
 		if (input.phone !== undefined) {
 			fields.push('phone = ?');
@@ -149,6 +187,10 @@ export class AccountRepository {
 			fields.push('token_version = ?');
 			values.push(input.token_version);
 		}
+		if (input.is_deleted !== undefined) {
+			fields.push('is_deleted = ?');
+			values.push(input.is_deleted ? 1 : 0);
+		}
 
 		if (fields.length === 0) {
 			return Promise.resolve({ success: true });
@@ -166,13 +208,6 @@ export class AccountRepository {
 		return await getDb()
 			.prepare(`UPDATE users SET token_version = token_version + 1 WHERE id = ?`)
 			.bind(userId)
-			.run();
-	}
-
-	async updateEmailConfirm(userId: number, email_confirm: boolean) {
-		return await getDb()
-			.prepare(`UPDATE users SET email_confirm = ?, updated_on = datetime('now') WHERE id = ?`)
-			.bind(email_confirm ? 1 : 0, userId)
 			.run();
 	}
 
@@ -218,7 +253,7 @@ export class AccountRepository {
 
 	async updatePasswordWithHistory(userId: number, newPasswordHash: string, oldPasswordHash: string, maxHistory: number = 10): Promise<D1Result> {
 		// Lấy password_his hiện tại
-		const user = await this.getUserById(userId);
+		const user = await this.getUser({ id: userId });
 		if (!user) throw new Error('User not found');
 
 		let history: string[] = [];
@@ -293,13 +328,6 @@ export class AccountRepository {
 		const sql = `SELECT COUNT(*) as total FROM users ${whereClause}`;
 		const result = await getDb().prepare(sql).bind(...params).first<{ total: number }>();
 		return result?.total ?? 0;
-	}
-
-	async deleteUser(userId: number) {
-		return await getDb()
-			.prepare(`UPDATE users SET is_deleted = 1 WHERE id = ?`)
-			.bind(userId)
-			.run();
 	}
 
 
